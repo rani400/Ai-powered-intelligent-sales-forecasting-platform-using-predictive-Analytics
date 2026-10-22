@@ -1,0 +1,5 @@
+# SalesGenie AI - frontend dependencies
+#
+# Lower bounds only, for the same reason as backend/requirements.txt.
+streamlit>=1.40.0
+requests>=2.32.3

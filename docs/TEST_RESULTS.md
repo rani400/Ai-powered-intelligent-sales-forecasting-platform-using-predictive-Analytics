@@ -2,9 +2,9 @@
 
 **Scope:** Milestone 1 (Lead Management & Intelligence Engine) and the first slice of
 Milestone 2 (AI Outreach Generation).
-**Test framework:** pytest 8.x with FastAPI `TestClient` (HTTP-level) plus direct service unit tests.
+**Test framework:** pytest with FastAPI `TestClient` (HTTP-level) plus direct service unit tests.
 **Database used:** SQLite (temporary file in the system temp directory) with foreign keys enabled.
-**Command:** `python -m pytest` from the project root.
+**Command:** `.\run.ps1 test` from the project root (runs pytest inside the project `.venv`).
 **Result of the final run:** **66 passed, 0 failed, 0 skipped.**
 
 ---
@@ -186,13 +186,10 @@ Test case IDs (TC-xx) are referenced from `docs/SRS.md`.
 
 ```powershell
 # From the project root
-python -m pytest                     # full suite
-python -m pytest -v                  # with test names
-python -m pytest backend/tests/test_lead_import.py -v
-python -m pytest --collect-only -q   # list test ids
-
-# Or through the helper script
-.\run.ps1 test
+.\run.ps1 test                          # full suite (uses .venv)
+.\.venv\Scripts\python.exe -m pytest -v                  # with test names
+.\.venv\Scripts\python.exe -m pytest backend/tests/test_lead_import.py -v
+.\.venv\Scripts\python.exe -m pytest --collect-only -q   # list test ids
 ```
 
 Expected output on a clean checkout:

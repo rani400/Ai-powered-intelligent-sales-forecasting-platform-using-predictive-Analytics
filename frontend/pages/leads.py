@@ -5,7 +5,6 @@ from __future__ import annotations
 import os
 import sys
 
-import pandas as pd
 import streamlit as st
 
 FRONTEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -77,7 +76,7 @@ def render_import() -> None:
                 if errors:
                     st.warning(f"{len(errors)} row(s) were not imported.")
                     st.dataframe(
-                        pd.DataFrame(errors),
+                        errors,
                         width="stretch",
                         hide_index=True,
                     )
@@ -129,7 +128,6 @@ def render_lead_table(payload: dict) -> None:
         st.info("No leads match the current filters.")
         return
 
-    frame = pd.DataFrame(items)
     display_columns = [
         "lead_id",
         "company_name",
@@ -141,8 +139,12 @@ def render_lead_table(payload: dict) -> None:
         "company_size",
         "source",
     ]
+    rows = [
+        {column: item.get(column) for column in display_columns if column in item}
+        for item in items
+    ]
     st.dataframe(
-        frame[[column for column in display_columns if column in frame.columns]],
+        rows,
         width="stretch",
         hide_index=True,
     )

@@ -5,7 +5,6 @@ from __future__ import annotations
 import os
 import sys
 
-import pandas as pd
 import streamlit as st
 
 FRONTEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -127,9 +126,18 @@ except Exception as exc:  # noqa: BLE001
     drafts = {"items": [], "total": 0}
 
 if drafts.get("items"):
-    frame = pd.DataFrame(drafts["items"])[
-        ["campaign_id", "lead_id", "email_subject", "campaign_status", "tone", "is_mock"]
+    columns = [
+        "campaign_id",
+        "lead_id",
+        "email_subject",
+        "campaign_status",
+        "tone",
+        "is_mock",
     ]
-    st.dataframe(frame, width="stretch", hide_index=True)
+    rows = [
+        {column: item.get(column) for column in columns if column in item}
+        for item in drafts["items"]
+    ]
+    st.dataframe(rows, width="stretch", hide_index=True)
 else:
     st.info("No drafts have been generated yet.")

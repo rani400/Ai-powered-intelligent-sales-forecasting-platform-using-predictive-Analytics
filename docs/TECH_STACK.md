@@ -18,9 +18,8 @@ alternatives that were rejected, and the trade-off that was accepted.
 | Database | PostgreSQL | 14+ | Production store |
 | Development database | SQLite | 3.35+ | Local development and automated tests |
 | Migrations | Versioned SQL + a custom runner | — | Repeatable, reviewable schema changes |
-| Data processing | Pandas | 2.2 | CSV handling, reporting tables |
-| Machine learning | Scikit-learn | 1.6 | Available for the later learned scoring model |
-| Frontend | Streamlit | 1.51 | Operator interface, no build step |
+| CSV parsing | Python `csv` (standard library) | — | Import parsing; no data-frame dependency |
+| Frontend | Streamlit | 1.51+ | Operator interface, no build step |
 | AI provider | Any OpenAI-compatible chat-completions API | — | Outreach generation |
 | HTTP client | httpx + requests | 0.28 / 2.32 | Backend calls from the frontend and from services |
 | Testing | pytest + FastAPI TestClient | 8.3 | Automated test suite |
@@ -110,14 +109,16 @@ be meaningless).
 **Accepted trade-off:** the score ranks records by data completeness and configured fit, not by
 likelihood of purchase. The API payload, the UI and the documentation all state this.
 
-### 2.9 Pandas for CSV and reporting only
+### 2.9 Standard-library `csv` for import parsing
 
-**Why:** it handles quoting, ragged rows and type inference robustly, and it powers the tables in
-the Streamlit interface.
+**Why:** the import path must be predictable about quoting, ragged rows and embedded separators,
+because a silent mis-parse corrupts a prospect database. The `csv` module gives exactly that,
+with no heavyweight dependency.
 
-**Accepted trade-off:** a heavyweight dependency for what is ultimately a small amount of CSV
-parsing. The import service uses the standard-library `csv` module for correctness-critical
-parsing and keeps Pandas for reporting.
+**Accepted trade-off:** no data-frame tooling in the backend, so aggregation happens in SQL.
+Streamlit renders the tables natively from plain lists of dictionaries, so the interface needs
+no data-frame library either. Pandas and Scikit-learn were removed from the dependency list
+after the initial implementation proved that neither was actually used.
 
 ---
 

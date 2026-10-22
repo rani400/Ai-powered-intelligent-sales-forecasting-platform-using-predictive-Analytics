@@ -21,51 +21,49 @@ backend and a Streamlit operator interface.
 ```powershell
 cd "C:\Users\Dell\Desktop\sales genie ai"
 
-# 1. Configuration
-Copy-Item .env.example .env
+# 1. Virtual environment + dependencies + .env
+.\run.ps1 setup
 
 # 2. Database
-python backend\scripts\migrate.py
+.\run.ps1 migrate
+```
 
-# 3. Backend API  -> http://127.0.0.1:8000  (docs at /docs)
-python -m uvicorn app.main:app --reload --app-dir backend
+Then start the two processes in **separate terminals**:
 
-# 4. Frontend     -> http://127.0.0.1:8501
-python -m streamlit run frontend\app.py
+```powershell
+# Terminal 1 - Backend API -> http://127.0.0.1:8000  (docs at /docs)
+.\run.ps1 api
+
+# Terminal 2 - Frontend    -> http://127.0.0.1:8501
+.\run.ps1 ui
+```
+
+`run.ps1` always uses `.venv\Scripts\python.exe` when that environment exists, so the project
+never installs into the global interpreter.
+
+### Running without the helper script
+
+```powershell
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --app-dir backend
+.\.venv\Scripts\python.exe -m streamlit run frontend\app.py
 ```
 
 ### Dependencies
 
-The interpreter on this machine already has every dependency installed — `python -m pytest` works
-as-is. If you need to install or refresh them:
+`setup` installs two requirement files into `.venv`:
 
-```powershell
-python -m pip install -r backend\requirements.txt
-```
+| File | Packages |
+| --- | --- |
+| `backend/requirements.txt` | `fastapi`, `uvicorn`, `sqlalchemy`, `pydantic`, `pydantic-settings`, `python-dotenv`, `python-multipart`, `httpx`, `psycopg2-binary`, `pytest`, `pytest-cov` |
+| `frontend/requirements.txt` | `streamlit`, `requests` |
 
-To work in an isolated environment instead:
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r backend\requirements.txt
-```
-
-If PowerShell blocks activation, call the interpreter directly:
-
-```powershell
-.\.venv\Scripts\python.exe -m pip install -r backend\requirements.txt
-.\.venv\Scripts\python.exe -m pytest
-```
-
-> **Note:** the virtual environment needs roughly 400 MB of free disk space. If `pip install`
-> fails with `No space left on device`, free up space or use the system interpreter, which
-> already has the dependencies.
+Both files use **lower bounds** (`>=`), not exact pins. Exact pins make pip downgrade packages
+that are already installed, which breaks unrelated projects sharing the same interpreter.
 
 ### Verify the installation
 
 ```powershell
-python -m pytest        # expect: 66 passed
+.\run.ps1 test       # expect: 66 passed
 ```
 
 ### Helper script
@@ -73,7 +71,7 @@ python -m pytest        # expect: 66 passed
 `run.ps1` wraps the common commands:
 
 ```powershell
-.\run.ps1 setup      # install dependencies and create .env
+.\run.ps1 setup      # create .venv, install dependencies, create .env
 .\run.ps1 migrate    # apply pending migrations
 .\run.ps1 status     # show the migration state
 .\run.ps1 test       # run the test suite
@@ -129,7 +127,8 @@ salesgenie-ai/
 ├── frontend/
 │   ├── app.py                          Home page
 │   ├── api_client.py                   Backend HTTP client
-│   └── pages/                          leads.py, intelligence.py, outreach.py
+│   ├── pages/                          leads.py, intelligence.py, outreach.py
+│   └── requirements.txt
 ├── data/                               sample_leads.csv, sample_leads_with_issues.csv
 ├── database/                           init scripts and dumps
 ├── docs/                               all project documentation
@@ -167,9 +166,9 @@ without a running server.
 ## Testing
 
 ```powershell
-python -m pytest                     # 66 tests
-python -m pytest -v                  # with test names
-python -m pytest backend/tests/test_lead_import.py -v
+.\run.ps1 test                          # 66 tests
+.\.venv\Scripts\python.exe -m pytest -v # with test names
+.\.venv\Scripts\python.exe -m pytest backend/tests/test_lead_import.py -v
 ```
 
 Expected: `66 passed`.
@@ -184,13 +183,13 @@ enforcement, and conformance between the implementation and `docs/API_CONTRACTS.
 
 ```powershell
 # End-to-end walkthrough against a running backend - prints every step
-python backend/scripts/demo_walkthrough.py --base-url http://127.0.0.1:8000
+.\run.ps1 demo
 
 # Measured prospect record coverage (imports, manages and analyses every record)
-python backend/scripts/measure_coverage.py --rows 500 --base-url http://127.0.0.1:8000
+.\run.ps1 coverage
 
 # Migration state
-python backend/scripts/migrate.py --status
+.\run.ps1 status
 ```
 
 Latest measured coverage: **100.00 %** over 500 records (threshold: 95 %).
@@ -220,8 +219,8 @@ See `.env.example` for the full list.
 #   DATABASE_URL=postgresql+psycopg2://salesgenie:<password>@localhost:5432/salesgenie
 
 docker compose up -d db
-python backend/scripts/migrate.py --reset
-python -m pytest
+.\run.ps1 migrate
+.\run.ps1 test
 ```
 
 The migration SQL is portable; the runner expands dialect placeholders for each engine.

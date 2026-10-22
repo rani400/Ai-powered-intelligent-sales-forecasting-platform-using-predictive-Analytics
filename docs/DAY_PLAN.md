@@ -73,7 +73,7 @@ only* or *Deferred*, never as completed.
 | 2.1 | Project structure | **Completed** | `backend/`, `frontend/`, `data/`, `database/`, `docs/`, `README.md`, `SPRINT_PLAN.md`, `.gitignore` | — |
 | 2.2 | Repository setup | **Partial** | The project is a **local git repository** on branch `main` with the full tree, `.gitignore` (excluding `.env`, `.venv/`, caches and local DB files) and the initial commit. **Not done:** no remote was added and nothing was pushed — no repository URL, account or credential was available in this environment | `git init -b main`<br>`git add .`<br>`git commit -m "SalesGenie AI - Milestone 1: lead management and intelligence engine"`<br>`git remote add origin YOUR_REPOSITORY_URL`<br>`git push -u origin main` |
 | 2.3 | API contracts | **Completed** | `docs/API_CONTRACTS.md` — 13 endpoints with request fields, response shapes, validation rules and error responses. Conformance is enforced by `test_api_contract.py` | `python -m pytest backend/tests/test_api_contract.py -v` |
-| 2.4 | Python environment | **Partial** | `backend/requirements.txt` with pinned versions. The interpreter on this machine already provides every dependency, so the suite runs as-is. A `python -m venv .venv` attempt failed with `No space left on device` (the drive had ~150 MB free), so no virtual environment is committed | `python -m pip install -r backend\requirements.txt`<br>`python -m venv .venv`<br>`.\.venv\Scripts\python.exe -m pip install -r backend\requirements.txt` |
+| 2.4 | Python environment | **Completed** | `backend/requirements.txt` (lower-bound pins, never exact) and `frontend/requirements.txt`, installed into a project-local `.venv` by `.\run.ps1 setup`. Every `run.ps1` command uses that interpreter, so the global site-packages is never touched. The suite passes inside the venv against the newest resolved versions (fastapi 0.159.1, starlette 1.9.0, pydantic 2.14.1, sqlalchemy 2.1.6, pytest 9.1.1) | `.\run.ps1 setup`<br>`.\run.ps1 test` |
 | 2.5 | Initial application | **Completed** | FastAPI app with `/health` and `/docs`; Streamlit app with home + 3 pages | `python -m uvicorn app.main:app --reload --app-dir backend`<br>`python -m streamlit run frontend/app.py` |
 | 2.6 | Sprint 1 backlog | **Completed** | `SPRINT_PLAN.md` — 37 backlog items across database design, lead APIs, CSV import, intelligence, testing and the demonstration | — |
 
@@ -183,8 +183,8 @@ development environment, bootable applications, sprint backlog.
 
 | # | Step | Status | Evidence | Command |
 | --- | --- | --- | --- | --- |
-| 6.1 | Unit tests | **Completed** | `backend/tests/test_leads.py` (12), `test_lead_import.py` (11), `test_duplicates.py` (5), plus `test_intelligence.py`, `test_outreach.py`, `test_performance.py`, `test_migrations.py`, `test_api_contract.py` — 66 tests in total | `python -m pytest` |
-| 6.2 | Import testing | **Completed** | TC-20 … TC-30 cover all seven listed cases plus a non-CSV upload | `python -m pytest backend/tests/test_lead_import.py -v` |
+| 6.1 | Unit tests | **Completed** | `backend/tests/test_leads.py` (12), `test_lead_import.py` (14), `test_duplicates.py` (5), plus `test_intelligence.py`, `test_outreach.py`, `test_performance.py`, `test_migrations.py`, `test_api_contract.py` — 66 tests in total | `.\run.ps1 test` |
+| 6.2 | Import testing | **Completed** | TC-20 … TC-33 cover all seven listed cases, a non-CSV upload and the three `update_existing` paths | `.\run.ps1 test` |
 | 6.3 | Database consistency | **Completed** | TC-05 (updates persist), TC-26/TC-27 (duplicate policy), TC-54 (score rows), TC-93 (foreign keys enforced) | `python -m pytest backend/tests/test_migrations.py -v` |
 | 6.4 | Results recorded | **Completed** | `docs/TEST_RESULTS.md` — 66 rows with test id, description, expected, actual and status; manual verification table; limitations | — |
 | 6.5 | Bugs fixed | **Completed** | 7 bugs fixed (B-01 … B-07) with root cause and regression test — see `docs/TEST_RESULTS.md` §10 | `python -m pytest` |
@@ -331,7 +331,7 @@ development environment, bootable applications, sprint backlog.
 | Day | Item | What is done | What is missing | Why |
 | --- | --- | --- | --- | --- |
 | 2 | GitHub repository | The full tree, `.gitignore`, `.env.example` and the commit-ready layout, initialised as a local git repository with the initial commit on `main` | The remote repository was never created and nothing was pushed | No repository URL, account or credential was available in this environment. The commands to finish it are in Day 2 row 2.2 |
-| 2 | Python environment | `backend/requirements.txt` with pinned versions; every dependency is present on the interpreter used for all verification runs | A committed virtual environment | `python -m venv .venv` failed with `No space left on device` (the drive had ~150 MB free). The system interpreter is complete, so this is a convenience gap, not a functional one |
+| 2 | Python environment | `backend/requirements.txt` and `frontend/requirements.txt` with lower-bound pins, installed into a project-local `.venv` that every `run.ps1` command uses | Nothing functional is missing | The earlier `python -m venv .venv` failed with `No space left on device`; freeing the pip cache (2.3 GB) resolved it, so the environment now exists and the suite passes inside it |
 | 4 | PostgreSQL connection | `DATABASE_URL` selects the engine, the SQL is dialect-portable and the runner expands the placeholders | The verification runs used SQLite | No PostgreSQL server was reachable here. The same SQL runs unchanged on PostgreSQL |
 | 8 | Evaluation feedback | 15 self-identified issues and 6 defects, each with severity, owner, planned fix and status | §4 (evaluator feedback) is an empty template | The evaluation had not taken place when this was written |
 | 9 | Submission evidence | Live Swagger, live Streamlit, walkthrough transcript, coverage measurement, ER diagram | Screen captures and the repository link | No screenshot tool is available here, and no repository exists |
@@ -351,19 +351,24 @@ development environment, bootable applications, sprint backlog.
 ```powershell
 cd "C:\Users\Dell\Desktop\sales genie ai"
 
-# 1. Install the dependencies (the interpreter on this machine already has them)
-python -m pip install -r backend\requirements.txt
+# 1. Create the virtual environment, install the dependencies and create .env
+.\run.ps1 setup
 
-# 2. Create the local configuration
-Copy-Item .env.example .env
+# 2. Apply the migrations
+.\run.ps1 migrate
 ```
 
-To work in an isolated environment instead:
+`setup` builds a project-local `.venv` and installs into it. The global interpreter is left
+untouched — this matters on a shared machine, because an exact-pinned requirements file would
+otherwise make pip downgrade packages that other projects depend on.
+
+If you prefer to drive the virtual environment by hand:
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r backend\requirements.txt
+python -m pip install -r frontend\requirements.txt
 ```
 
 If activation is blocked by the machine's execution policy, call the interpreter directly:
@@ -373,46 +378,50 @@ If activation is blocked by the machine's execution policy, call the interpreter
 .\.venv\Scripts\python.exe -m pytest
 ```
 
-> A virtual environment needs roughly 400 MB of free disk space. If `pip install` fails with
-> `No space left on device`, use the system interpreter, which already has the dependencies.
+> The virtual environment needs roughly 700 MB of free disk space once Streamlit and its
+> transitive dependencies are installed. Free the pip cache with `python -m pip cache purge`
+> if the install fails with `No space left on device`.
 
 ### Run the system
 
 ```powershell
 # Terminal 1 - database
-python backend\scripts\migrate.py
+.\run.ps1 migrate
 
 # Terminal 2 - backend API (http://127.0.0.1:8000, docs at /docs)
-python -m uvicorn app.main:app --reload --app-dir backend
+.\run.ps1 api
 
 # Terminal 3 - Streamlit UI (http://127.0.0.1:8501)
-python -m streamlit run frontend\app.py
+.\run.ps1 ui
 ```
 
 ### Verify
 
 ```powershell
 # Full automated suite
-python -m pytest
+.\run.ps1 test
 
 # Individual suites
-python -m pytest backend\tests\test_leads.py -v
-python -m pytest backend\tests\test_lead_import.py -v
-python -m pytest backend\tests\test_duplicates.py -v
-python -m pytest backend\tests\test_intelligence.py -v
-python -m pytest backend\tests\test_outreach.py -v
-python -m pytest backend\tests\test_performance.py -v
-python -m pytest backend\tests\test_migrations.py -v
-python -m pytest backend\tests\test_api_contract.py -v
+.\.venv\Scripts\python.exe -m pytest backend\tests\test_leads.py -v
+.\.venv\Scripts\python.exe -m pytest backend\tests\test_lead_import.py -v
+.\.venv\Scripts\python.exe -m pytest backend\tests\test_duplicates.py -v
+.\.venv\Scripts\python.exe -m pytest backend\tests\test_intelligence.py -v
+.\.venv\Scripts\python.exe -m pytest backend\tests\test_outreach.py -v
+.\.venv\Scripts\python.exe -m pytest backend\tests\test_performance.py -v
+.\.venv\Scripts\python.exe -m pytest backend\tests\test_migrations.py -v
+.\.venv\Scripts\python.exe -m pytest backend\tests\test_api_contract.py -v
 
 # End-to-end walkthrough transcript
-python backend\scripts\demo_walkthrough.py --base-url http://127.0.0.1:8000
+.\run.ps1 demo
 
 # Measured record coverage
-python backend\scripts\measure_coverage.py --rows 500 --base-url http://127.0.0.1:8000
+.\run.ps1 coverage
 
 # Migration state
-python backend\scripts\migrate.py --status
+.\run.ps1 status
+
+# Lint and format checks
+.\run.ps1 lint
 ```
 
 ### Optional: PostgreSQL instead of SQLite

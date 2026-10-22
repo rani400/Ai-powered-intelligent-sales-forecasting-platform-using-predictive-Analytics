@@ -5,7 +5,6 @@ from __future__ import annotations
 import os
 import sys
 
-import pandas as pd
 import streamlit as st
 
 FRONTEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -99,7 +98,7 @@ score_col2.caption(f"Methodology: {score.get('methodology', 'n/a')}")
 factors = score.get("factors", [])
 if factors:
     st.dataframe(
-        pd.DataFrame(factors),
+        factors,
         width="stretch",
         hide_index=True,
     )

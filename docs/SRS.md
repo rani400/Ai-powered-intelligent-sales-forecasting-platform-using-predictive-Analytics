@@ -196,8 +196,7 @@ Prospect data → Company analysis → Lead intelligence → Qualification score
 | ORM | SQLAlchemy 2.0 (declarative, typed) | Typed models, portable across PostgreSQL and SQLite |
 | Database | PostgreSQL 14+ (production) / SQLite (dev + CI) | Transactional integrity, FK enforcement |
 | Migrations | Versioned SQL scripts + a tracked runner (`backend/scripts/migrate.py`) | Repeatable, reviewable, engine-portable |
-| Data processing | Pandas | CSV parsing, column normalisation, reporting |
-| ML / scoring | Scikit-learn | Available for the later learned model; the current score is rule-based |
+| CSV parsing | Python standard library `csv` module | No heavyweight dependency for correctness-critical parsing |
 | Frontend | Streamlit | Fast operator UI, no separate build chain |
 | AI | Provider-agnostic LLM client (OpenAI-compatible HTTP) with a labelled mock fallback | Keeps the platform runnable without credentials |
 | Testing | pytest + httpx | Fast, isolated, CI-friendly |
