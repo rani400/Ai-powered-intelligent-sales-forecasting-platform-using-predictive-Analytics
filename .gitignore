@@ -38,6 +38,8 @@ htmlcov/
 *.sqlite
 *.sqlite3
 database/*.db
+database/dumps/*
+!database/dumps/.gitkeep
 data/uploads/
 
 # ---- Streamlit ----
