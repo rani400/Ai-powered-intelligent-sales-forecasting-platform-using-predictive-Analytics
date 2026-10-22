@@ -56,4 +56,7 @@ class OutreachCampaign(Base):
     lead: Mapped["Lead"] = relationship(back_populates="campaigns")
 
     def __repr__(self) -> str:  # pragma: no cover - debug helper
-        return f"<OutreachCampaign id={self.campaign_id} lead_id={self.lead_id} status={self.campaign_status}>"
+        return (
+            f"<OutreachCampaign id={self.campaign_id} "
+            f"lead_id={self.lead_id} status={self.campaign_status}>"
+        )

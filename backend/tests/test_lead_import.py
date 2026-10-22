@@ -87,9 +87,7 @@ def test_tc24_partially_invalid_file_reports_each_row(client: TestClient) -> Non
 
 def test_tc25_import_normalises_values(client: TestClient) -> None:
     """TC-25 / FR-1.10: CSV values are normalised on the way in."""
-    csv_text = (
-        "company_name,email\n  TechCorp   Solutions  ,  SARAH@Example.COM \n"
-    )
+    csv_text = "company_name,email\n  TechCorp   Solutions  ,  SARAH@Example.COM \n"
     response = _upload(client, csv_text)
     assert response.status_code == 200
     assert response.json()["inserted"] == 1
@@ -134,8 +132,7 @@ def test_tc28_duplicate_company_contact_flagged(client: TestClient) -> None:
     """TC-28 / FR-1.11: a matching company + contact pair is flagged for review."""
     client.post("/api/leads", json=VALID_LEAD)
     csv_text = (
-        "company_name,contact_name,email\n"
-        "techcorp solutions,Sarah Johnson,other@example.com\n"
+        "company_name,contact_name,email\ntechcorp solutions,Sarah Johnson,other@example.com\n"
     )
     response = _upload(client, csv_text)
     body = response.json()
@@ -197,10 +194,7 @@ def test_tc32_update_existing_keeps_fields_absent_from_the_csv(client: TestClien
     """TC-32: update_existing does not blank out fields the CSV does not carry."""
     client.post("/api/leads", json=VALID_LEAD)
 
-    csv_text = (
-        "company_name,email,lead_status\n"
-        "TechCorp Solutions,sarah@example.com,Contacted\n"
-    )
+    csv_text = "company_name,email,lead_status\nTechCorp Solutions,sarah@example.com,Contacted\n"
     response = _upload(client, csv_text, update_existing="true")
     assert response.json()["updated"] == 1
 
@@ -216,9 +210,7 @@ def test_tc33_update_existing_still_inserts_new_rows(client: TestClient) -> None
     client.post("/api/leads", json=VALID_LEAD)
 
     csv_text = (
-        "company_name,email\n"
-        "TechCorp Solutions,sarah@example.com\n"
-        "Innovate Labs,mark@example.com\n"
+        "company_name,email\nTechCorp Solutions,sarah@example.com\nInnovate Labs,mark@example.com\n"
     )
     response = _upload(client, csv_text, update_existing="true")
     body = response.json()

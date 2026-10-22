@@ -24,7 +24,7 @@ DOCUMENTED_ENDPOINTS = {
 def test_tc94_openapi_exposes_every_documented_endpoint(client: TestClient) -> None:
     """TC-94: every endpoint in the contract is present in the OpenAPI schema."""
     schema = client.get("/openapi.json").json()
-    for (method, path) in DOCUMENTED_ENDPOINTS:
+    for method, path in DOCUMENTED_ENDPOINTS:
         assert path in schema["paths"], f"{path} is missing from the OpenAPI schema"
         assert method in schema["paths"][path], f"{method.upper()} {path} is missing"
 

@@ -12,11 +12,9 @@ FRONTEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if FRONTEND_DIR not in sys.path:
     sys.path.insert(0, FRONTEND_DIR)
 
-from api_client import ApiError, SalesGenieApi  # noqa: E402
+from api_client import SalesGenieApi  # noqa: E402
 
-st.set_page_config(
-    page_title="Outreach - SalesGenie AI", page_icon="SG", layout="wide"
-)
+st.set_page_config(page_title="Outreach - SalesGenie AI", page_icon="SG", layout="wide")
 
 api = SalesGenieApi(st.session_state.get("api_base_url"))
 

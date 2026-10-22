@@ -109,9 +109,7 @@ def test_tc66_empty_provider_response_is_handled() -> None:
     generator = OutreachGenerator(
         api_key="test-key",
         transport=httpx.MockTransport(
-            lambda request: httpx.Response(
-                200, json={"choices": [{"message": {"content": "   "}}]}
-            )
+            lambda request: httpx.Response(200, json={"choices": [{"message": {"content": "   "}}]})
         ),
         max_retries=0,
     )
@@ -233,4 +231,6 @@ def test_tc72_draft_uses_stored_lead_data(client: TestClient) -> None:
         json={"lead_id": created["lead_id"], "product_or_service": "SalesGenie AI"},
     ).json()
 
-    assert "TechCorp Solutions" in draft["email_subject"] or "Sarah Johnson" in draft["email_content"]
+    assert (
+        "TechCorp Solutions" in draft["email_subject"] or "Sarah Johnson" in draft["email_content"]
+    )

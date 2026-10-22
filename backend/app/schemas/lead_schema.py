@@ -198,7 +198,7 @@ class LeadUpdate(BaseModel):
         return _validate_status_value(str(value))
 
     @model_validator(mode="after")
-    def _require_at_least_one_field(self) -> "LeadUpdate":
+    def _require_at_least_one_field(self) -> LeadUpdate:
         if not self.model_dump(exclude_unset=True):
             raise ValueError("at least one field must be supplied")
         return self

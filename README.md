@@ -81,6 +81,7 @@ python -m pytest        # expect: 66 passed
 .\run.ps1 ui         # start the Streamlit UI on :8501
 .\run.ps1 demo       # end-to-end walkthrough transcript
 .\run.ps1 coverage   # measure record coverage
+.\run.ps1 lint       # ruff lint + format check
 .\run.ps1 check      # tests + migrations + a live API check
 ```
 

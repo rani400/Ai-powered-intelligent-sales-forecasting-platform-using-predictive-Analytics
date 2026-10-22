@@ -10,11 +10,6 @@ from fastapi.testclient import TestClient
 
 def test_tc80_list_endpoint_response_time(client: TestClient) -> None:
     """TC-80 / NFR-11: listing 1,000 records responds in well under 500 ms."""
-    payload = {
-        "company_name": "Bulk Corp",
-        "email": "bulk@example.com",
-        "lead_status": "New",
-    }
     rows = "\n".join(
         f"Bulk Corp {index},Software,Contact {index},bulk{index}@example.com,90000{index:05d},New"
         for index in range(1000)

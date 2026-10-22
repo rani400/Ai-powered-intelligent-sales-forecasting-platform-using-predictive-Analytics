@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import enum
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, DateTime, Integer, String, Text, func
@@ -51,9 +51,7 @@ class Lead(Base):
     )
     company_size: Mapped[str | None] = mapped_column(String(50), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
-    source: Mapped[str] = mapped_column(
-        String(40), nullable=False, default=LeadSource.MANUAL.value
-    )
+    source: Mapped[str] = mapped_column(String(40), nullable=False, default=LeadSource.MANUAL.value)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
@@ -62,7 +60,7 @@ class Lead(Base):
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
-        onupdate=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(UTC),
     )
 
     scores: Mapped[list["LeadScore"]] = relationship(

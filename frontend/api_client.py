@@ -56,9 +56,7 @@ class SalesGenieApi:
                 detail = payload.get("detail") or detail
                 errors = payload.get("errors") or []
                 if errors:
-                    parts = [
-                        f"{issue.get('field')}: {issue.get('message')}" for issue in errors
-                    ]
+                    parts = [f"{issue.get('field')}: {issue.get('message')}" for issue in errors]
                     detail = detail + " - " + "; ".join(parts)
             elif isinstance(payload, str) and payload.strip():
                 detail = payload.strip()
@@ -93,9 +91,7 @@ class SalesGenieApi:
             params["status"] = status
         if industry:
             params["industry"] = industry
-        response = self.session.get(
-            self._url("/api/leads"), params=params, timeout=TIMEOUT_SECONDS
-        )
+        response = self.session.get(self._url("/api/leads"), params=params, timeout=TIMEOUT_SECONDS)
         return self._raise_for_status(response)
 
     def get_lead(self, lead_id: int) -> dict[str, Any]:
@@ -105,9 +101,7 @@ class SalesGenieApi:
 
     def create_lead(self, payload: dict[str, Any]) -> dict[str, Any]:
         """Create a lead record."""
-        response = self.session.post(
-            self._url("/api/leads"), json=payload, timeout=TIMEOUT_SECONDS
-        )
+        response = self.session.post(self._url("/api/leads"), json=payload, timeout=TIMEOUT_SECONDS)
         return self._raise_for_status(response)
 
     def update_lead(self, lead_id: int, payload: dict[str, Any]) -> dict[str, Any]:
@@ -119,9 +113,7 @@ class SalesGenieApi:
 
     def delete_lead(self, lead_id: int) -> dict[str, Any]:
         """Delete a lead record."""
-        response = self.session.delete(
-            self._url(f"/api/leads/{lead_id}"), timeout=TIMEOUT_SECONDS
-        )
+        response = self.session.delete(self._url(f"/api/leads/{lead_id}"), timeout=TIMEOUT_SECONDS)
         return self._raise_for_status(response)
 
     def import_leads(

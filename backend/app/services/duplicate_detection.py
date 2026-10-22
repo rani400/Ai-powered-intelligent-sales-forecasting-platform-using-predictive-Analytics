@@ -62,15 +62,19 @@ class DuplicateDetector:
         company = normalise_text(company_name) or ""
         contact = normalise_text(contact_name) or ""
 
-        existing = self.db.execute(
-            select(Lead)
-            .where(
-                func.lower(Lead.company_name) == company.lower(),
-                func.lower(Lead.contact_name) == contact.lower(),
-                Lead.is_active.is_(True),
+        existing = (
+            self.db.execute(
+                select(Lead)
+                .where(
+                    func.lower(Lead.company_name) == company.lower(),
+                    func.lower(Lead.contact_name) == contact.lower(),
+                    Lead.is_active.is_(True),
+                )
+                .order_by(Lead.lead_id)
             )
-            .order_by(Lead.lead_id)
-        ).scalars().first()
+            .scalars()
+            .first()
+        )
         if existing is None:
             return None
         return DuplicateMatch(

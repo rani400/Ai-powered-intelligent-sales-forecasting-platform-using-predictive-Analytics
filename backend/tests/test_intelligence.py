@@ -5,8 +5,7 @@ from __future__ import annotations
 from fastapi.testclient import TestClient
 
 from app.models.lead import Lead, LeadStatus
-from app.services.lead_intelligence import generate_insight
-from app.services.lead_intelligence import WEIGHTS, calculate_qualification_score
+from app.services.lead_intelligence import WEIGHTS, calculate_qualification_score, generate_insight
 from tests.conftest import VALID_LEAD
 
 
@@ -158,7 +157,9 @@ def test_tc54_score_rows_are_recorded(client: TestClient) -> None:
     db = next(db_gen)
     try:
         count = db.execute(
-            select(func.count()).select_from(LeadScore).where(LeadScore.lead_id == created["lead_id"])
+            select(func.count())
+            .select_from(LeadScore)
+            .where(LeadScore.lead_id == created["lead_id"])
         ).scalar_one()
     finally:
         db_gen.close()

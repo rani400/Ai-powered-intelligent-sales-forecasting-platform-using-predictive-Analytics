@@ -44,7 +44,7 @@ engine = _build_engine()
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
 
 
-def get_db() -> Generator[Session, None, None]:
+def get_db() -> Generator[Session]:
     """FastAPI dependency yielding a database session that is always closed."""
     db = SessionLocal()
     try:

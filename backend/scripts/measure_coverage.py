@@ -77,9 +77,7 @@ def main(argv: list[str] | None = None) -> int:
                     failures.append(f"lead {lead_id}: retrieve returned {retrieved.status_code}")
                     continue
 
-                updated = client.put(
-                    f"/api/leads/{lead_id}", json={"lead_status": "Contacted"}
-                )
+                updated = client.put(f"/api/leads/{lead_id}", json={"lead_status": "Contacted"})
                 if updated.status_code != 200:
                     failures.append(f"lead {lead_id}: update returned {updated.status_code}")
                     continue

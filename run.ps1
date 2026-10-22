@@ -9,12 +9,13 @@
 #   .\run.ps1 coverage  measure the prospect record coverage
 #   .\run.ps1 status    show the migration state
 #   .\run.ps1 check     verify everything (tests + migrations + a live API check)
+#   .\run.ps1 lint     run ruff lint and format checks
 #
 # The API and the UI need separate terminals; use .\run.ps1 api in one and .\run.ps1 ui in another.
 
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('setup', 'migrate', 'status', 'test', 'api', 'ui', 'demo', 'coverage', 'check')]
+    [ValidateSet('setup', 'migrate', 'status', 'test', 'api', 'ui', 'demo', 'coverage', 'check', 'lint')]
     [string]$Command = 'check'
 )
 
@@ -74,6 +75,14 @@ switch ($Command) {
     'coverage' {
         Write-Step 'Measuring prospect record coverage'
         python backend\scripts\measure_coverage.py --rows 500 --base-url http://127.0.0.1:8000
+    }
+
+    'lint' {
+        Write-Step 'Ruff lint'
+        ruff check .
+
+        Write-Step 'Ruff format check'
+        ruff format --check .
     }
 
     'check' {

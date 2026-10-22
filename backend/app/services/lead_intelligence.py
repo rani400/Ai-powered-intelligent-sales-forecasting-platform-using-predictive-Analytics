@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -161,9 +161,7 @@ def _industry_factor(industry: str | None) -> ScoreFactorResult:
         raw = 1.0
         explanation = f"'{industry}' is a configured target industry."
     else:
-        matched = sorted(
-            target for target in TARGET_INDUSTRIES if target in key or key in target
-        )
+        matched = sorted(target for target in TARGET_INDUSTRIES if target in key or key in target)
         if matched:
             raw = 0.8
             explanation = f"'{industry}' closely matches target industry '{matched[0]}'."
@@ -195,7 +193,9 @@ def _company_size_factor(company_size: str | None) -> ScoreFactorResult:
     raw = COMPANY_SIZE_FIT.get(key)
     if raw is None:
         raw = 0.5
-        explanation = f"Company size '{company_size}' is not a recognised band; neutral score applied."
+        explanation = (
+            f"Company size '{company_size}' is not a recognised band; neutral score applied."
+        )
     else:
         explanation = f"Company size band '{company_size}' maps to fit factor {raw:.2f}."
     return ScoreFactorResult(
@@ -450,7 +450,7 @@ def generate_insight(lead: Lead) -> LeadInsightResponse:
 
     return LeadInsightResponse(
         lead_id=lead.lead_id,
-        generated_at=datetime.now(timezone.utc),
+        generated_at=datetime.now(UTC),
         company_profile=profile,
         qualification_score=QualificationScore(
             score=score.score,
@@ -553,9 +553,7 @@ def _record_to_response(db: Session, record: CompanyInsight, lead: Lead) -> Lead
     )
 
 
-def get_or_generate_insight(
-    db: Session, lead: Lead, refresh: bool = False
-) -> LeadInsightResponse:
+def get_or_generate_insight(db: Session, lead: Lead, refresh: bool = False) -> LeadInsightResponse:
     """Return the cached insight for a lead or generate and store a fresh one."""
     if not refresh:
         cached = latest_insight_record(db, lead.lead_id)

@@ -12,11 +12,9 @@ FRONTEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if FRONTEND_DIR not in sys.path:
     sys.path.insert(0, FRONTEND_DIR)
 
-from api_client import ApiError, SalesGenieApi  # noqa: E402
+from api_client import SalesGenieApi  # noqa: E402
 
-st.set_page_config(
-    page_title="Intelligence - SalesGenie AI", page_icon="SG", layout="wide"
-)
+st.set_page_config(page_title="Intelligence - SalesGenie AI", page_icon="SG", layout="wide")
 
 api = SalesGenieApi(st.session_state.get("api_base_url"))
 
@@ -89,9 +87,7 @@ meta_col1, meta_col2, meta_col3, meta_col4 = st.columns(4)
 meta_col1.metric("Industry", profile.get("industry") or "Not recorded")
 meta_col2.metric("Contact", profile.get("contact_name") or "Not recorded")
 meta_col3.metric("Status", profile.get("lead_status") or "Not recorded")
-meta_col4.metric(
-    "Data completeness", f"{profile.get('data_completeness', 0) * 100:.0f}%"
-)
+meta_col4.metric("Data completeness", f"{profile.get('data_completeness', 0) * 100:.0f}%")
 
 st.subheader("Qualification score")
 score_col1, score_col2 = st.columns([1, 3])

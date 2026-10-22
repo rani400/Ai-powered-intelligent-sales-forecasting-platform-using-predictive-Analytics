@@ -126,7 +126,11 @@ def test_tc11_email_and_whitespace_normalised(client: TestClient) -> None:
     """FR-1.10 / NFR-1: emails are lower-cased and whitespace is trimmed on write."""
     response = client.post(
         "/api/leads",
-        json={**VALID_LEAD, "company_name": "  TechCorp   Solutions  ", "email": "  SARAH@Example.COM "},
+        json={
+            **VALID_LEAD,
+            "company_name": "  TechCorp   Solutions  ",
+            "email": "  SARAH@Example.COM ",
+        },
     )
     assert response.status_code == 201
     body = response.json()

@@ -68,9 +68,7 @@ def test_detect_prefers_the_email_signal() -> None:
     db = next(db_gen)
     try:
         detector = DuplicateDetector(db)
-        match = detector.detect(
-            "sarah@example.com", "TechCorp Solutions", "Sarah Johnson"
-        )
+        match = detector.detect("sarah@example.com", "TechCorp Solutions", "Sarah Johnson")
         assert match is not None
         assert match.reason == "duplicate_email"
     finally:

@@ -110,9 +110,7 @@ def read_lead(lead_id: int, db: Session = Depends(get_db)) -> LeadRead:
     response_model=LeadRead,
     summary="Update a lead",
 )
-def update_lead(
-    lead_id: int, payload: LeadUpdate, db: Session = Depends(get_db)
-) -> LeadRead:
+def update_lead(lead_id: int, payload: LeadUpdate, db: Session = Depends(get_db)) -> LeadRead:
     """Apply a partial update to a prospect record."""
     lead = lead_service.get_lead_or_404(db, lead_id)
     return LeadRead.model_validate(lead_service.update_lead(db, lead, payload))

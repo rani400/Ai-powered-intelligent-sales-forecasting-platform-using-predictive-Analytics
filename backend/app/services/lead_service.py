@@ -74,11 +74,17 @@ def list_leads(
         filters.append(Lead.industry == industry)
 
     total = db.execute(select(func.count()).select_from(Lead).where(*filters)).scalar_one()
-    rows = db.execute(
-        select(Lead).where(*filters).order_by(Lead.created_at.desc(), Lead.lead_id.desc())
-        .offset(skip)
-        .limit(limit)
-    ).scalars().all()
+    rows = (
+        db.execute(
+            select(Lead)
+            .where(*filters)
+            .order_by(Lead.created_at.desc(), Lead.lead_id.desc())
+            .offset(skip)
+            .limit(limit)
+        )
+        .scalars()
+        .all()
+    )
     return total, list(rows)
 
 
@@ -131,12 +137,8 @@ def lead_stats(db: Session) -> dict[str, object]:
 
     from app.models.lead_score import LeadScore
 
-    scored = db.execute(
-        select(func.count(func.distinct(LeadScore.lead_id)))
-    ).scalar_one()
-    average_score = db.execute(
-        select(func.avg(LeadScore.score))
-    ).scalar()
+    scored = db.execute(select(func.count(func.distinct(LeadScore.lead_id)))).scalar_one()
+    average_score = db.execute(select(func.avg(LeadScore.score))).scalar()
 
     return {
         "total_leads": total_leads,

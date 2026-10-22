@@ -148,10 +148,11 @@ def render_lead_table(payload: dict) -> None:
     )
 
     lead_ids = [item["lead_id"] for item in items]
+    company_by_id = {item["lead_id"]: item["company_name"] for item in items}
     selected_id = st.selectbox(
         "Select a lead to edit or delete",
         lead_ids,
-        format_func=lambda value: f"#{value} - {next(i['company_name'] for i in items if i['lead_id'] == value)}",
+        format_func=lambda value: f"#{value} - {company_by_id[value]}",
         key="leads_selected",
     )
     selected = next(item for item in items if item["lead_id"] == selected_id)
@@ -202,9 +203,7 @@ def render_lead_table(payload: dict) -> None:
 
     with right:
         st.markdown("#### Delete lead")
-        st.warning(
-            "Deleting a lead also removes its stored insights, scores and outreach drafts."
-        )
+        st.warning("Deleting a lead also removes its stored insights, scores and outreach drafts.")
         confirm = st.checkbox("I understand this cannot be undone", key="leads_delete_confirm")
         if st.button("Delete lead", type="secondary", disabled=not confirm):
             try:

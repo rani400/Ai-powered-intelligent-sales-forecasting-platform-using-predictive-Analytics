@@ -110,9 +110,7 @@ def industry_guidance(industry: str | None) -> str:
     triggers = payload.get("triggers", [])
     guidance = (
         f"Industry: {industry}. Treat the following as sector-level context only - these are "
-        "common patterns in this sector, not facts about this company: "
-        + "; ".join(triggers)
-        + "."
+        "common patterns in this sector, not facts about this company: " + "; ".join(triggers) + "."
     )
     if key == "default":
         guidance = (
@@ -138,8 +136,10 @@ def build_prompt(
     length_text = LENGTHS.get(email_length, LENGTHS["short"])
 
     greeting_name = contact_name.strip() if contact_name and contact_name.strip() else None
-    greeting = f"The contact is named {greeting_name}." if greeting_name else (
-        "No contact name is recorded - greet them without a name."
+    greeting = (
+        f"The contact is named {greeting_name}."
+        if greeting_name
+        else ("No contact name is recorded - greet them without a name.")
     )
 
     user_prompt = f"""Write a sales email to the following prospect.
@@ -150,9 +150,9 @@ Prospect facts (use these only, do not add others):
 - Industry: {industry or "not recorded"}
 - Offering: {product_or_service}
 
-Objective: {goal['instruction']}
-Call to action: {goal['call_to_action']}
-Subject line: write {goal['subject_hint']}.
+Objective: {goal["instruction"]}
+Call to action: {goal["call_to_action"]}
+Subject line: write {goal["subject_hint"]}.
 Tone: {tone_text}
 Length: {length_text}
 

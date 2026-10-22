@@ -136,9 +136,7 @@ class LeadImportService:
         headers = {normalise_header(name) for name in reader.fieldnames if name is not None}
         missing = [column for column in REQUIRED_CSV_COLUMNS if column not in headers]
         if missing:
-            raise CSVImportError(
-                "Missing required column(s): " + ", ".join(missing)
-            )
+            raise CSVImportError("Missing required column(s): " + ", ".join(missing))
 
         rows: list[dict[str, str]] = []
         for raw_row in reader:

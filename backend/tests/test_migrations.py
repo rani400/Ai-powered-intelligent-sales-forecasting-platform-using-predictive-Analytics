@@ -27,7 +27,7 @@ def test_tc90_migration_scripts_are_versioned_and_ordered() -> None:
 
 def test_tc91_migration_runner_is_idempotent() -> None:
     """TC-91: running the migration runner twice does not apply a script twice."""
-    scripts = sys.path.insert(0, str(BACKEND_DIR / "scripts")) or sys.path
+    sys.path.insert(0, str(BACKEND_DIR / "scripts"))
     try:
         import migrate  # type: ignore[import-not-found]
     finally:
