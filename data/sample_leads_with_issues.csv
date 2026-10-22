@@ -1,0 +1,6 @@
+company_name,industry,contact_name,email,phone,lead_status
+Acme Analytics,Analytics,Dana Fox,dana@acme.example.com,9000000001,New
+Broken Email Co,Software,No Reply,not-an-email,9000000002,New
+,Technology,Nameless Contact,nameless@example.com,9000000003,New
+Unknown Status Ltd,Software,Pat Patel,pat@example.com,9000000004,Archived
+Duplicate Corp,Software,Sam Ray,sam@example.com,9000000005,New

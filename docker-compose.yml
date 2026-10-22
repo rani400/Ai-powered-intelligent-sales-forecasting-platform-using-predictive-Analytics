@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:14-alpine
+    container_name: salesgenie-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-salesgenie}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-salesgenie}
+      POSTGRES_DB: ${POSTGRES_DB:-salesgenie}
+    ports:
+      - "5432:5432"
+    volumes:
+      - salesgenie_pgdata:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-salesgenie}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: salesgenie-api
+    environment:
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-salesgenie}:${POSTGRES_PASSWORD:-salesgenie}@db:5432/${POSTGRES_DB:-salesgenie}
+      API_PREFIX: /api
+      CORS_ORIGINS: http://localhost:8501,http://127.0.0.1:8501
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://api.openai.com/v1}
+      LLM_MODEL: ${LLM_MODEL:-gpt-4o-mini}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      sh -c "python scripts/migrate.py && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+
+volumes:
+  salesgenie_pgdata:

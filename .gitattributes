@@ -1,0 +1,18 @@
+# Normalise line endings so the repository behaves the same on Windows, macOS and Linux.
+* text=auto
+
+*.py        text diff=python
+*.sql       text
+*.md        text
+*.csv       text
+*.yml       text
+*.yaml      text
+*.json      text
+*.txt       text
+*.ps1       text eol=crlf
+Dockerfile  text
+
+*.png       binary
+*.jpg       binary
+*.db        binary
+*.sqlite    binary
