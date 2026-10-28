@@ -1,0 +1,31 @@
+# Environment / secrets
+.env
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Python cache / test cache
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# Local databases / generated artifacts
+*.db
+*.sqlite
+*.sqlite3
+*.pkl
+*.joblib
+
+# IDE / OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs / temporary files
+*.log
+tmp/
+temp/
