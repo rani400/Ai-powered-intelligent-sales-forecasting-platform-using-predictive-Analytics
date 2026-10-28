@@ -1,0 +1,4 @@
+company_name,industry,contact_name,contact_title,email,company_size,engagement_score,website_visits,email_opens,email_clicks,budget_confirmed,need_identified,decision_maker,lead_status,notes
+TechCorp Solutions,Technology,Sarah Johnson,CTO,sarah@example.com,250,82,5,3,1,true,true,true,Qualified,Interested in sales analytics
+GreenLeaf Retail,Retail,Arun Kumar,Operations Manager,arun@example.com,75,48,2,1,0,false,true,false,Contacted,Asked for a case study
+Northstar Education,Education,Meera Rao,Director,meera@example.com,120,25,1,0,0,false,false,false,New,Needs discovery call

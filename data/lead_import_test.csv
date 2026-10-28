@@ -1,0 +1,6 @@
+company_name,industry,contact_name,contact_title,email,phone,company_size,annual_revenue,engagement_score,website_visits,email_opens,email_clicks,budget_confirmed,need_identified,decision_maker,lead_status,notes
+Fictional Nova Tech,Technology,Jordan Lee,Operations Director,jordan.lee@example.com,202-555-0141,85,4200000,72,12,6,3,true,true,true,Qualified,Fictional test lead for CSV import
+Fictional Cedar Retail,Retail,Casey Patel,Marketing Manager,casey.patel@example.com,202-555-0142,42,1800000,48,7,3,1,false,true,false,Contacted,Fictional test lead for CSV import
+Fictional Bluebird Health,Healthcare,Taylor Morgan,Practice Administrator,taylor.morgan@example.com,202-555-0143,120,7600000,31,4,2,0,false,false,true,New,Fictional test lead for CSV import
+Fictional Summit Learning,Education,Alex Kim,Program Director,alex.kim@example.com,202-555-0144,65,2300000,59,9,5,2,true,true,false,Proposal,Fictional test lead for CSV import
+Fictional Harbor Logistics,Logistics,Riley Chen,Sales Lead,riley.chen@example.com,202-555-0145,210,12500000,84,18,11,6,true,true,true,Negotiation,Fictional test lead for CSV import
