@@ -1,4 +1,7 @@
-company_name,industry,contact_name,contact_title,email,company_size,engagement_score,website_visits,email_opens,email_clicks,budget_confirmed,need_identified,decision_maker,lead_status,notes
-TechCorp Solutions,Technology,Sarah Johnson,CTO,sarah@example.com,250,82,5,3,1,true,true,true,Qualified,Interested in sales analytics
-GreenLeaf Retail,Retail,Arun Kumar,Operations Manager,arun@example.com,75,48,2,1,0,false,true,false,Contacted,Asked for a case study
-Northstar Education,Education,Meera Rao,Director,meera@example.com,120,25,1,0,0,false,false,false,New,Needs discovery call
+company_name,industry,contact_name,email,phone,lead_status,company_size,engagement_score,source,notes
+Northstar Retail,Retail,Asha Menon,asha@northstar.example,+91 9000000011,Qualified,51-200,82,Demo webinar,Synthetic prospect used for a demonstration
+BrightLine Systems,Technology,Rohan Shah,rohan@brightline.example,+91 9000000012,Contacted,11-50,64,Demo referral,Synthetic prospect used for a demonstration
+Evergreen Health,Healthcare,Meera Rao,meera@evergreen.example,,New,201-500,37,Demo event,Synthetic prospect used for a demonstration
+MetroFab Works,Manufacturing,Arjun Iyer,arjun@metrofab.example,+91 9000000014,New,51-200,49,Demo website,Synthetic prospect used for a demonstration
+BluePeak Finance,Finance,Kavya Nair,kavya@bluepeak.example,,Contacted,500+,75,Demo webinar,Synthetic prospect used for a demonstration
+OpenPath Learning,Education,Dev Kumar,dev@openpath.example,+91 9000000016,New,1-10,22,Demo form,Synthetic prospect used for a demonstration
