@@ -93,7 +93,11 @@ def import_csv(db: Session, content: bytes, duplicate_policy: str) -> ImportRepo
         reader = csv.DictReader(io.StringIO(decoded))
         if not reader.fieldnames:
             raise HTTPException(status_code=400, detail='CSV must have a header row')
-        normalized_headers = {h.strip().lower().replace(' ', '_') for h in reader.fieldnames if h}
+        normalized_headers = [h.strip().lower().replace(' ', '_') if h else '' for h in reader.fieldnames]
+        if not all(normalized_headers):
+            raise HTTPException(status_code=400, detail='CSV header names must not be empty')
+        if len(normalized_headers) != len(set(normalized_headers)):
+            raise HTTPException(status_code=400, detail='CSV contains duplicate column headers')
         if 'company_name' not in normalized_headers:
             raise HTTPException(status_code=400, detail='Missing required CSV header: company_name')
         for row_number, raw in enumerate(reader, start=2):

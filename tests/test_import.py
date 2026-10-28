@@ -75,6 +75,19 @@ def test_import_bad_header(client):
     assert r.status_code == 400
 
 
+def test_import_duplicate_normalized_headers(client):
+    r = upload(client, 'company name,company_name,email\nAlpha,Beta,a@example.org\n')
+    assert r.status_code == 400
+    assert 'duplicate' in r.json()['detail'].lower()
+    assert client.get('/api/leads').json()['total'] == 0
+
+
+def test_import_empty_header(client):
+    r = upload(client, 'company_name,,email\nAlpha,unused,a@example.org\n')
+    assert r.status_code == 400
+    assert 'header' in r.json()['detail'].lower()
+
+
 def test_import_wrong_extension(client):
     r = upload(client, 'company_name\nAcme', filename='data.txt')
     assert r.status_code == 400
