@@ -51,6 +51,20 @@ def test_import_missing_company(client):
     assert r.json()['inserted'] == 0
 
 
+def test_import_extra_columns_rejects_only_bad_row(client):
+    text = ('company_name,email\n'
+            'Alpha,a@example.org\n'
+            'Broken,b@example.org,unexpected value\n'
+            'Beta,c@example.org\n')
+    result = upload(client, text)
+    assert result.status_code == 200
+    report = result.json()
+    assert report['inserted'] == 2
+    assert report['rejected'] == 1
+    assert report['issues'][0]['row'] == 3
+    assert report['issues'][0]['reason_code'] == 'EXTRA_CSV_COLUMNS'
+
+
 def test_import_bad_number(client):
     r = upload(client, 'company_name,email,engagement_score\nAcme,a@example.org,very_high\n')
     assert r.json()['rejected'] == 1

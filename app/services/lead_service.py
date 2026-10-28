@@ -100,6 +100,12 @@ def import_csv(db: Session, content: bytes, duplicate_policy: str) -> ImportRepo
             if all(not str(value or '').strip() for value in raw.values()):
                 report.skipped += 1
                 continue
+            if None in raw:
+                report.rejected += 1
+                report.issues.append(ImportIssue(
+                    row=row_number, reason_code='EXTRA_CSV_COLUMNS',
+                    explanation='CSV row has more values than the header defines'))
+                continue
             try:
                 row = normalize_csv_row(raw)
                 body = LeadCreate.model_validate(row)
