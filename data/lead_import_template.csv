@@ -1,0 +1,2 @@
+company_name,industry,contact_name,contact_title,email,phone,company_size,annual_revenue,engagement_score,website_visits,email_opens,email_clicks,budget_confirmed,need_identified,decision_maker,lead_status,notes
+Example Company,Technology,Alex Morgan,Sales Director,alex.morgan@example.com,202-555-0101,50,2500000,65,8,4,2,false,true,true,New,Replace this fictional example row with your lead data
