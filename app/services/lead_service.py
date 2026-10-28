@@ -23,10 +23,15 @@ def list_leads(db: Session, search: str | None = None, status: str | None = None
                page: int = 1, page_size: int = 20, active_only: bool = False):
     query = select(Lead)
     if search:
-        pattern = f'%{search.strip().lower()}%'
-        query = query.where(or_(func.lower(Lead.company_name).like(pattern),
-                                func.lower(Lead.contact_name).like(pattern),
-                                func.lower(Lead.email).like(pattern)))
+        # A user's % and _ are literal search characters, not SQL wildcards.
+        term = (search.strip().lower()
+                .replace('\\', '\\\\')
+                .replace('%', '\\%')
+                .replace('_', '\\_'))
+        pattern = f'%{term}%'
+        query = query.where(or_(func.lower(Lead.company_name).like(pattern, escape='\\'),
+                                func.lower(Lead.contact_name).like(pattern, escape='\\'),
+                                func.lower(Lead.email).like(pattern, escape='\\')))
     if status:
         query = query.where(Lead.lead_status == status)
     if industry:

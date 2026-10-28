@@ -42,6 +42,13 @@ def test_search(client, created):
     assert client.get('/api/leads', params={'search': 'nonexistent'}).json()['total'] == 0
 
 
+def test_search_treats_sql_wildcards_as_literals(client, created):
+    # Percent and underscore must not act as LIKE wildcards.
+    assert client.get('/api/leads', params={'search': '%'}).json()['total'] == 0
+    assert client.get('/api/leads', params={'search': '_'}).json()['total'] == 0
+    assert client.get('/api/leads', params={'search': 'sample'}).json()['total'] == 1
+
+
 def test_filters(client, created):
     assert client.get('/api/leads', params={'lead_status': 'New'}).json()['total'] == 1
     assert client.get('/api/leads', params={'lead_status': 'Qualified'}).json()['total'] == 0
