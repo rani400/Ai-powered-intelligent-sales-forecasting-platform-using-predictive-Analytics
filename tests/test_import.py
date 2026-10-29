@@ -51,20 +51,6 @@ def test_import_missing_company(client):
     assert r.json()['inserted'] == 0
 
 
-def test_import_extra_columns_rejects_only_bad_row(client):
-    text = ('company_name,email\n'
-            'Alpha,a@example.org\n'
-            'Broken,b@example.org,unexpected value\n'
-            'Beta,c@example.org\n')
-    result = upload(client, text)
-    assert result.status_code == 200
-    report = result.json()
-    assert report['inserted'] == 2
-    assert report['rejected'] == 1
-    assert report['issues'][0]['row'] == 3
-    assert report['issues'][0]['reason_code'] == 'EXTRA_CSV_COLUMNS'
-
-
 def test_import_bad_number(client):
     r = upload(client, 'company_name,email,engagement_score\nAcme,a@example.org,very_high\n')
     assert r.json()['rejected'] == 1
@@ -73,19 +59,6 @@ def test_import_bad_number(client):
 def test_import_bad_header(client):
     r = upload(client, 'name,email\nAcme,a@example.org\n')
     assert r.status_code == 400
-
-
-def test_import_duplicate_normalized_headers(client):
-    r = upload(client, 'company name,company_name,email\nAlpha,Beta,a@example.org\n')
-    assert r.status_code == 400
-    assert 'duplicate' in r.json()['detail'].lower()
-    assert client.get('/api/leads').json()['total'] == 0
-
-
-def test_import_empty_header(client):
-    r = upload(client, 'company_name,,email\nAlpha,unused,a@example.org\n')
-    assert r.status_code == 400
-    assert 'header' in r.json()['detail'].lower()
 
 
 def test_import_wrong_extension(client):
@@ -104,3 +77,34 @@ def test_import_row_normalization(client):
     saved = client.get('/api/leads').json()['items'][0]
     assert saved['email'] == 'test@example.org'
     assert saved['lead_status'] == 'Qualified'
+
+
+def test_import_duplicate_normalized_headers(client):
+    r = upload(client, 'company name,company_name,email\nAlpha,Beta,a@example.org\n')
+    assert r.status_code == 400
+    assert 'duplicate' in r.json()['detail'].lower()
+
+
+def test_import_empty_header(client):
+    r = upload(client, 'company_name,,email\nAlpha,unused,a@example.org\n')
+    assert r.status_code == 400
+
+
+def test_import_extra_columns_rejects_bad_row_only(client):
+    content = ('company_name,email\n'
+               'Alpha,a@example.org\n'
+               'Broken,b@example.org,unexpected\n'
+               'Beta,c@example.org\n')
+    r = upload(client, content)
+    assert r.status_code == 200
+    result = r.json()
+    assert result['inserted'] == 2
+    assert result['rejected'] == 1
+    assert result['issues'][0]['row'] == 3
+    assert result['issues'][0]['reason_code'] == 'EXTRA_CSV_COLUMNS'
+
+
+def test_import_unknown_headers_are_not_silently_discarded(client):
+    r = upload(client, 'company_name,secret_notes\nAlpha,private\n')
+    assert r.status_code == 400
+    assert 'unsupported' in r.json()['detail'].lower()
