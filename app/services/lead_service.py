@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from app.models import Lead
 from app.schemas.lead import LeadCreate, LeadUpdate, ImportReport, ImportIssue
 from app.utils.duplicate_detection import find_duplicate
-from app.utils.validation import normalize_csv_row
+from app.utils.validation import normalize_csv_row, CSV_FIELDS
 
 
 def retrieve(db: Session, lead_id: int) -> Lead:
@@ -23,7 +23,7 @@ def list_leads(db: Session, search: str | None = None, status: str | None = None
                page: int = 1, page_size: int = 20, active_only: bool = False):
     query = select(Lead)
     if search:
-        # A user's % and _ are literal search characters, not SQL wildcards.
+        # Treat SQL LIKE wildcard characters entered by users as literal text.
         term = (search.strip().lower()
                 .replace('\\', '\\\\')
                 .replace('%', '\\%')
@@ -93,22 +93,26 @@ def import_csv(db: Session, content: bytes, duplicate_policy: str) -> ImportRepo
         reader = csv.DictReader(io.StringIO(decoded))
         if not reader.fieldnames:
             raise HTTPException(status_code=400, detail='CSV must have a header row')
-        normalized_headers = [h.strip().lower().replace(' ', '_') if h else '' for h in reader.fieldnames]
+        normalized_headers = [h.strip().lower().replace(' ', '_') if h else ''
+                              for h in reader.fieldnames]
         if not all(normalized_headers):
             raise HTTPException(status_code=400, detail='CSV header names must not be empty')
         if len(normalized_headers) != len(set(normalized_headers)):
             raise HTTPException(status_code=400, detail='CSV contains duplicate column headers')
         if 'company_name' not in normalized_headers:
             raise HTTPException(status_code=400, detail='Missing required CSV header: company_name')
+        unexpected = set(normalized_headers) - CSV_FIELDS
+        if unexpected:
+            raise HTTPException(status_code=400, detail='Unsupported CSV header(s): ' + ', '.join(sorted(unexpected)))
         for row_number, raw in enumerate(reader, start=2):
-            if all(not str(value or '').strip() for value in raw.values()):
-                report.skipped += 1
-                continue
             if None in raw:
                 report.rejected += 1
                 report.issues.append(ImportIssue(
                     row=row_number, reason_code='EXTRA_CSV_COLUMNS',
                     explanation='CSV row has more values than the header defines'))
+                continue
+            if all(not str(value or '').strip() for value in raw.values()):
+                report.skipped += 1
                 continue
             try:
                 row = normalize_csv_row(raw)
