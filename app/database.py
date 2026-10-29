@@ -1,47 +1,38 @@
-import os, sqlite3
-from pathlib import Path
+"""SQLAlchemy connections and FastAPI dependency."""
+from functools import lru_cache
+from sqlalchemy import create_engine, event
+from sqlalchemy.engine import Engine
+from sqlalchemy.orm import DeclarativeBase, sessionmaker, Session
+from app.config import get_settings
 
-DB_PATH = os.getenv("DATABASE_PATH", "./data/salesgenie.db")
-Path(DB_PATH).parent.mkdir(parents=True, exist_ok=True)
 
-SCHEMA = """
-CREATE TABLE IF NOT EXISTS leads (
- id INTEGER PRIMARY KEY AUTOINCREMENT,
- company_name TEXT NOT NULL,
- industry TEXT NOT NULL DEFAULT 'Unknown',
- contact_name TEXT NOT NULL DEFAULT 'there',
- contact_title TEXT NOT NULL DEFAULT '',
- email TEXT, phone TEXT,
- company_size INTEGER NOT NULL DEFAULT 0,
- annual_revenue REAL NOT NULL DEFAULT 0,
- engagement_score REAL NOT NULL DEFAULT 0,
- website_visits INTEGER NOT NULL DEFAULT 0,
- email_opens INTEGER NOT NULL DEFAULT 0,
- email_clicks INTEGER NOT NULL DEFAULT 0,
- budget_confirmed INTEGER NOT NULL DEFAULT 0,
- need_identified INTEGER NOT NULL DEFAULT 0,
- decision_maker INTEGER NOT NULL DEFAULT 0,
- lead_status TEXT NOT NULL DEFAULT 'New',
- notes TEXT NOT NULL DEFAULT '',
- created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
- updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-"""
+class Base(DeclarativeBase):
+    pass
 
-def connect():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON")
-    return conn
 
-def init_db():
-    with connect() as conn:
-        conn.executescript(SCHEMA)
+def make_engine(url: str) -> Engine:
+    kwargs = {'pool_pre_ping': True}
+    if url.startswith('sqlite'):
+        kwargs['connect_args'] = {'check_same_thread': False}
+    engine = create_engine(url, **kwargs)
+    if url.startswith('sqlite'):
+        @event.listens_for(engine, 'connect')
+        def enable_foreign_keys(dbapi_connection, _record):
+            cursor = dbapi_connection.cursor()
+            cursor.execute('PRAGMA foreign_keys=ON')
+            cursor.execute('PRAGMA busy_timeout=5000')
+            cursor.close()
+    return engine
 
-BOOL_FIELDS = {"budget_confirmed", "need_identified", "decision_maker"}
-def row_to_dict(row):
-    if row is None: return None
-    result = dict(row)
-    for field in BOOL_FIELDS:
-        result[field] = bool(result[field])
-    return result
+
+@lru_cache
+def get_engine():
+    return make_engine(get_settings().database_url)
+
+
+SessionLocal = sessionmaker(autocommit=False, autoflush=False)
+
+
+def get_db():
+    with SessionLocal(bind=get_engine()) as session:
+        yield session
