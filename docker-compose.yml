@@ -1,0 +1,38 @@
+# Optional Docker setup. Set POSTGRES_PASSWORD in an uncommitted .env.
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: salesgenie
+      POSTGRES_DB: salesgenie
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in a private .env file}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U salesgenie -d salesgenie"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+  backend:
+    build: .
+    environment:
+      DATABASE_URL: postgresql+psycopg://salesgenie:${POSTGRES_PASSWORD}@postgres:5432/salesgenie
+      LLM_PROVIDER: mock
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+  frontend:
+    build: .
+    environment:
+      SALES_API_URL: http://backend:8000
+    command: ["python", "-m", "streamlit", "run", "frontend/Home.py", "--server.address=0.0.0.0", "--server.port=8501", "--server.headless=true"]
+    ports:
+      - "127.0.0.1:8501:8501"
+    depends_on:
+      - backend
+volumes:
+  db_data:
