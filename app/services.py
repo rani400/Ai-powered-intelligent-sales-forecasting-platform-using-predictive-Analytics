@@ -100,20 +100,14 @@ def score_lead(lead: dict[str, Any]) -> dict[str, Any]:
         factors.append({"factor": "Lost status", "points": 0})
     
     score = min(points, 100)
-    if score >= 85:
+    if score >= 60:
         tier = "High"
-    elif score >= 60:
-        tier = "Medium"
-    elif score >= 35:
-        tier = "Low"
     else:
-        tier = "Very Low"
+        tier = "Low"
     
     recommendations = {
         "High": "Prioritise a personalised follow-up and propose a discovery call immediately.",
-        "Medium": "Share a relevant case study and schedule a follow-up within 48 hours.",
         "Low": "Nurture with educational content and re-engage when activity increases.",
-        "Very Low": "Add to long-term nurture campaign or gather more qualifying information.",
     }
     return {"lead_score": score, "qualification_tier": tier, "conversion_probability": None,
             "probability_note": "A real conversion probability requires historical leads with known outcomes and a validated predictive model.",

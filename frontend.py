@@ -92,9 +92,9 @@ if page == "Lead Management":
         leads = get_leads(search, filter_status)
         st.write(f"**{len(leads)} lead(s)**")
         if leads:
-            st.dataframe([{ "ID": x["id"], "Company": x["company_name"], "Industry": x["industry"], "Contact": x["contact_name"], "Email": x["email"], "Status": x["lead_status"], "Engagement": x["engagement_score"] } for x in leads], width='stretch', hide_index=True)
+            st.dataframe([{ "Company": x["company_name"], "Industry": x["industry"], "Contact": x["contact_name"], "Email": x["email"], "Status": x["lead_status"], "Engagement": x["engagement_score"] } for x in leads], width='stretch', hide_index=True)
             ids = [x["id"] for x in leads]
-            chosen_id = st.selectbox("Select lead to update or delete", ids, format_func=lambda i: f"#{i} — {next((x['company_name'] for x in leads if x['id']==i), '')}")
+            chosen_id = st.selectbox("Select lead to update or delete", ids, format_func=lambda i: next((x['company_name'] for x in leads if x['id']==i), ''))
             chosen = next(x for x in leads if x["id"] == chosen_id)
             with st.expander("Edit selected lead"):
                 with st.form("edit_lead"):
@@ -122,16 +122,16 @@ elif page == "Lead Intelligence":
         leads = get_leads()
         if not leads: st.info("Add a lead in Lead Management first.")
         else:
-            lead_id = st.selectbox("Choose lead", [x["id"] for x in leads], format_func=lambda i: f"{next(x['company_name'] for x in leads if x['id']==i)} (ID {i})", key="intel_id")
+            lead_id = st.selectbox("Choose lead", [x["id"] for x in leads], format_func=lambda i: next(x['company_name'] for x in leads if x['id']==i), key="intel_id")
             if st.button("Analyze company", type="primary"):
                 r = requests.get(f"{API_BASE}/leads/{lead_id}/intelligence", timeout=10); r.raise_for_status(); result = r.json()
                 a = result["company_analysis"]; s = result["lead_scoring"]
                 st.subheader(a["company_name"])
                 st.write(a["company_summary"])
-                st.metric("Qualification score", f"{s['lead_score']}/100", s["qualification_tier"] + " priority")
+                st.metric("Qualification score", f"{s['lead_score']}/100")
                 st.markdown("**Potential needs**"); st.write(a["potential_needs"])
                 st.markdown("**Potential opportunities**")
-                for item in a["opportunities"]: st.write("• " + item)
+                for item in a["opportunities"]: st.write("â€¢ " + item)
                 st.caption(a["source_note"])
     except Exception as exc: api_error(exc)
 
@@ -142,14 +142,51 @@ elif page == "AI Outreach":
         leads = get_leads()
         if not leads: st.info("Add a lead in Lead Management first.")
         else:
-            lead_id = st.selectbox("Choose prospect", [x["id"] for x in leads], format_func=lambda i: f"{next(x['company_name'] for x in leads if x['id']==i)} (ID {i})", key="outreach_id")
-            tone = st.selectbox("Tone", ["professional", "friendly", "concise"])
+            col_a, col_b = st.columns([2, 1])
+            lead_id = col_a.selectbox("Choose prospect", [x["id"] for x in leads], format_func=lambda i: next(x['company_name'] for x in leads if x['id']==i), key="outreach_id")
+            tone = col_b.selectbox("Tone", ["professional", "friendly", "concise"])
             goal = st.text_input("Email goal", "schedule a 15-minute discovery call")
-            if st.button("Generate email draft", type="primary"):
-                r = requests.post(f"{API_BASE}/leads/{lead_id}/outreach", json={"tone": tone, "goal": goal}, timeout=10); r.raise_for_status(); draft = r.json()
-                st.text_input("Subject", draft["subject"])
-                st.text_area("Email body", draft["body"], height=280)
-                st.caption(draft["note"])
+            
+            c1, c2, c3, c4 = st.columns(4)
+            generate_btn = c1.button("Generate Email", type="primary", use_container_width=True)
+            refresh_btn = c2.button("Refresh", use_container_width=True)
+            edit_mode = c3.checkbox("Edit Draft", value=False)
+            copy_btn = c4.button("Copy to Clipboard", use_container_width=True)
+            
+            if refresh_btn:
+                st.cache_data.clear()
+                st.rerun()
+            
+            if generate_btn or 'outreach_draft' in st.session_state:
+                if generate_btn:
+                    try:
+                        r = requests.post(f"{API_BASE}/leads/{lead_id}/outreach", json={"tone": tone, "goal": goal}, timeout=10)
+                        r.raise_for_status()
+                        draft = r.json()
+                        st.session_state.outreach_draft = draft
+                        st.session_state.outreach_lead = lead_id
+                    except Exception as exc:
+                        api_error(exc)
+                        st.stop()
+                
+                draft = st.session_state.get('outreach_draft', {})
+                if edit_mode:
+                    subject = st.text_input("Subject", value=draft.get("subject", ""))
+                    body = st.text_area("Email body", value=draft.get("body", ""), height=320)
+                    st.session_state.outreach_draft['subject'] = subject
+                    st.session_state.outreach_draft['body'] = body
+                else:
+                    st.text_input("Subject", value=draft.get("subject", ""), disabled=True)
+                    st.text_area("Email body", value=draft.get("body", ""), height=320, disabled=True)
+                
+                if copy_btn:
+                    st.info("Copy the subject and body above manually.")
+                
+                send_btn = st.button("Send Email", type="secondary", use_container_width=True)
+                if send_btn:
+                    st.success("Email send functionality is not implemented in this demo. Draft only.")
+                
+                st.caption(draft.get("note", ""))
     except Exception as exc: api_error(exc)
 
 elif page == "Lead Scoring":
@@ -159,10 +196,10 @@ elif page == "Lead Scoring":
         leads = get_leads()
         if not leads: st.info("Add a lead in Lead Management first.")
         else:
-            lead_id = st.selectbox("Choose lead", [x["id"] for x in leads], format_func=lambda i: f"{next(x['company_name'] for x in leads if x['id']==i)} (ID {i})", key="score_id")
+            lead_id = st.selectbox("Choose lead", [x["id"] for x in leads], format_func=lambda i: next(x['company_name'] for x in leads if x['id']==i), key="score_id")
             if st.button("Calculate lead score", type="primary"):
                 r = requests.get(f"{API_BASE}/leads/{lead_id}/score", timeout=10); r.raise_for_status(); result = r.json()
-                st.metric("Lead qualification score", f"{result['lead_score']}/100", result["qualification_tier"] + " priority")
+                st.metric("Lead qualification score", f"{result['lead_score']}/100")
                 st.progress(result["lead_score"] / 100)
                 st.markdown("**Scoring factors**")
                 if result["factors"]: st.dataframe(result["factors"], width='stretch', hide_index=True)
