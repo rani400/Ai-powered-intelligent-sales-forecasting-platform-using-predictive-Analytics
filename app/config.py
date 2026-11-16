@@ -19,6 +19,14 @@ class Settings(BaseSettings):
     metrics_path: str = str(ROOT / 'artifacts' / 'model_metrics.json')
     max_csv_bytes: int = 5_000_000
 
+    # Milestone 3 / Module 5. Always off by default; do NOT commit real secrets.
+    crm_live_sync_enabled: bool = False
+    crm_admin_key: str = ''
+    salesforce_instance_url: str = ''
+    salesforce_access_token: str = ''
+    salesforce_api_version: str = 'v60.0'
+    hubspot_access_token: str = ''
+
 
 @lru_cache
 def get_settings() -> Settings:

@@ -4,7 +4,7 @@ import pytest
 def test_health(client):
     response = client.get('/health')
     assert response.status_code == 200
-    assert response.json()['active_modules'] == 4
+    assert response.json()['active_modules'] == 5
 
 
 def test_create(client, sample):
