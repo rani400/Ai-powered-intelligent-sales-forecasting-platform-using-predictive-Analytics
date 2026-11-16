@@ -127,7 +127,7 @@ def test_migrations(tmp_path):
     engine = make_engine(f'sqlite:///{target}')
     with engine.connect() as conn:
         version = conn.execute(text('SELECT version_num FROM alembic_version')).scalar_one()
-        assert version == '0001'
+        assert version == '0002'
     engine.dispose()
 
 
