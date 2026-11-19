@@ -322,3 +322,50 @@ def crm_sync_logs(crm: str | None = Query(default=None),
                   status: str | None = Query(default=None),
                   limit: int = Query(default=100, ge=1, le=500)):
     return get_sync_logs(crm, entity_type, status, limit)
+
+# ===== Sales Interactions (meeting/call summarization + storage) =====
+from .database import save_interaction, list_interactions, get_interaction, delete_interaction
+from .schemas import InteractionSummarizeRequest
+
+def _decode_interaction(rec: dict) -> dict:
+    for field in ("key_discussion_points", "action_items", "customer_concerns", "next_steps"):
+        try:
+            rec[field] = json.loads(rec.get(field) or "[]")
+        except Exception:
+            rec[field] = []
+    return rec
+
+@app.post("/interactions/summarize", status_code=201)
+def summarize_interaction(payload: InteractionSummarizeRequest):
+    if payload.lead_id is not None:
+        get_lead(payload.lead_id)
+    result = summarize_conversation(payload.transcript, payload.interaction_type)
+    source = "groq" if "Groq" in (result.get("note") or "") else "rule-based"
+    record = save_interaction(
+        payload.lead_id, payload.interaction_type, payload.title, payload.participants,
+        payload.transcript, result.get("summary", ""),
+        json.dumps(result.get("key_points", [])),
+        json.dumps(result.get("action_items", [])),
+        json.dumps(result.get("customer_concerns", [])),
+        json.dumps(result.get("next_steps", [])),
+        payload.sentiment, source)
+    return _decode_interaction(record)
+
+@app.get("/interactions")
+def interactions_list(lead_id: int | None = Query(default=None),
+                      interaction_type: str | None = Query(default=None),
+                      limit: int = Query(default=100, ge=1, le=500)):
+    return [_decode_interaction(r) for r in list_interactions(lead_id, interaction_type, limit)]
+
+@app.get("/interactions/{interaction_id}")
+def interactions_get(interaction_id: int):
+    rec = get_interaction(interaction_id)
+    if not rec:
+        raise HTTPException(404, "Interaction not found")
+    return _decode_interaction(rec)
+
+@app.delete("/interactions/{interaction_id}")
+def interactions_delete(interaction_id: int):
+    if not delete_interaction(interaction_id):
+        raise HTTPException(404, "Interaction not found")
+    return {"message": "Interaction deleted", "interaction_id": interaction_id}

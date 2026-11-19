@@ -69,3 +69,12 @@ class ActivityCreate(BaseModel):
     activity_type: str = Field(default="note", max_length=50)
     subject: str = Field(default="", max_length=300)
     body: str = ""
+
+
+class InteractionSummarizeRequest(BaseModel):
+    lead_id: Optional[int] = None
+    interaction_type: str = Field(default="call", pattern="^(call|meeting|demo|follow-up|other)$")
+    title: str = Field(default="", max_length=300)
+    participants: str = Field(default="", max_length=500)
+    transcript: str = Field(min_length=10, max_length=50000)
+    sentiment: str = Field(default="", max_length=50)

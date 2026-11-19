@@ -159,32 +159,67 @@ Transcript:
             r.raise_for_status()
             content = r.json()["choices"][0]["message"]["content"]
             import json as _json
+            import re as _re_json
+            cleaned = content.strip()
+            cleaned = _re_json.sub(r"^```(?:json)?\s*", "", cleaned)
+            cleaned = _re_json.sub(r"\s*```$", "", cleaned)
+            if not cleaned.startswith("{"):
+                m = _re_json.search(r"\{.*\}", cleaned, _re_json.S)
+                if m:
+                    cleaned = m.group(0)
             try:
-                parsed = _json.loads(content)
+                parsed = _json.loads(cleaned)
             except Exception:
                 parsed = {"summary": content, "key_points": [], "customer_concerns": [], "action_items": [], "next_steps": []}
             return {"summary": parsed.get("summary", ""), "key_points": parsed.get("key_points", []), "customer_concerns": parsed.get("customer_concerns", []), "action_items": parsed.get("action_items", []), "next_steps": parsed.get("next_steps", []), "note": "Generated via Groq."}
         except Exception:
             pass
     # Rule-based fallback
-    lines = [l.strip() for l in transcript.splitlines() if l.strip()]
-    summary = f"{meeting_type} call summary based on {len(lines)} spoken lines."
-    key_points = []
-    concerns = []
-    action_items = []
-    next_steps = []
+    import re as _re
+    raw = _re.split(r"(?<=[.!?])\s+|\n+", transcript)
+    sentences = [s.strip(" -\t") for s in raw if len(s.strip()) > 12]
     lower = transcript.lower()
-    for kw in KEY_ACTION_KEYWORDS:
-        if kw in lower:
-            idx = lower.find(kw)
-            snippet = transcript[max(0,idx-60):idx+120].replace("\n"," ")
-            action_items.append({"task": f"Follow up on: {snippet}", "assignee": "Sales Rep", "due_date": "Within 3 business days"})
+    discussion_cues = ["need", "want", "require", "currently", "problem", "challenge", "pain",
+                       "goal", "budget", "timeline", "deadline", "competitor", "integrat",
+                       "concern", "issue", "cost", "price", "pricing", "plan", "objective"]
+    action_cues = ["will", "can you", "please", "follow up", "follow-up", "schedule", "send",
+                   "review", "call back", "callback", "next step", "demo", "proposal",
+                   "contract", "trial", "meeting", "provide", "share", "connect", "confirm"]
+    key_points = [s for s in sentences if any(c in s.lower() for c in discussion_cues)][:6]
+    if not key_points:
+        key_points = sentences[:3]
+    action_items = []
+    seen_tasks = set()
+    for s in sentences:
+        low = s.lower()
+        if any(c in low for c in action_cues):
+            assignee = "Prospect" if ("prospect:" in low or "customer:" in low or "client:" in low) else "Sales Rep"
+            due = "Within 3 business days"
+            if "friday" in low: due = "By Friday"
+            elif "tomorrow" in low: due = "Tomorrow"
+            elif "next week" in low: due = "Next week"
+            elif "today" in low: due = "Today"
+            task = s.strip()
+            if task.lower() in seen_tasks:
+                continue
+            seen_tasks.add(task.lower())
+            action_items.append({"task": task, "assignee": assignee, "due_date": due})
+    action_items = action_items[:8]
     if not action_items:
         action_items.append({"task": "Review call notes and send follow-up email", "assignee": "Sales Rep", "due_date": "Within 2 business days"})
-    if "budget" in lower: concerns.append("Budget discussion noted")
-    if "timeline" in lower or "deadline" in lower: concerns.append("Timeline mentioned")
+    concerns = []
+    if "budget" in lower or "cost" in lower or "price" in lower: concerns.append("Budget / pricing discussion")
+    if "timeline" in lower or "deadline" in lower: concerns.append("Timeline / deadline mentioned")
     if "competitor" in lower or "alternative" in lower: concerns.append("Competitor mentioned")
+    if "integrat" in lower: concerns.append("Integration requirement")
+    if "security" in lower or "privacy" in lower or "compliance" in lower: concerns.append("Security / compliance concern")
+    next_steps = []
     if "demo" in lower: next_steps.append("Schedule product demo")
     if "proposal" in lower: next_steps.append("Send proposal")
+    if "pilot" in lower: next_steps.append("Plan pilot rollout")
     if not next_steps: next_steps.append("Send summary email and schedule next call")
-    return {"summary": summary, "key_points": key_points, "customer_concerns": concerns, "action_items": action_items, "next_steps": next_steps, "note": "Rule-based extraction (no Groq key or API unavailable)."}
+    summary = (f"{meeting_type} with {len(sentences)} key statements. "
+               f"Main themes: " + "; ".join(key_points[:3]) if key_points else f"{meeting_type} call summary based on {len(sentences)} statements.")
+    return {"summary": summary, "key_points": key_points, "customer_concerns": concerns,
+            "action_items": action_items, "next_steps": next_steps,
+            "note": "Rule-based extraction (no Groq key or API unavailable)."}
