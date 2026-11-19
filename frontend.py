@@ -27,9 +27,9 @@ except Exception as exc:
     st.code(".\\.venv312\\Scripts\\python.exe -m uvicorn app.main:app --reload")
     st.stop()
 
-pages = ["Lead Management", "Lead Intelligence", "AI Outreach", "Lead Scoring"]
+pages = ["Lead Management", "Lead Intelligence", "AI Outreach", "Lead Scoring", "Conversation Intelligence"]
 page = st.sidebar.radio("Choose module", pages)
-st.sidebar.caption("This app implements only the four requested modules.")
+st.sidebar.caption("This app implements five modules: Lead Management, Lead Intelligence, AI Outreach, Lead Scoring, and Conversation Intelligence.")
 
 if page == "Lead Management":
     st.header("1. Lead Management")
@@ -128,7 +128,9 @@ elif page == "Lead Intelligence":
                 a = result["company_analysis"]; s = result["lead_scoring"]
                 st.subheader(a["company_name"])
                 st.write(a["company_summary"])
-                st.metric("Qualification score", f"{s['lead_score']}/100")
+                col_m1, col_m2 = st.columns(2)
+                col_m1.metric("Qualification score", f"{s['lead_score']}/100")
+                col_m2.metric("Conversion Probability", f"{s.get('conversion_probability', 0)}%")
                 st.markdown("**Potential needs**"); st.write(a["potential_needs"])
                 st.markdown("**Potential opportunities**")
                 for item in a["opportunities"]: st.write("â€¢ " + item)
@@ -146,6 +148,35 @@ elif page == "AI Outreach":
             lead_id = col_a.selectbox("Choose prospect", [x["id"] for x in leads], format_func=lambda i: next(x['company_name'] for x in leads if x['id']==i), key="outreach_id")
             tone = col_b.selectbox("Tone", ["professional", "friendly", "concise"])
             goal = st.text_input("Email goal", "schedule a 15-minute discovery call")
+            
+            # Lead Score and Outreach Strategy Cards
+            try:
+                score_r = requests.get(f"{API_BASE}/leads/{lead_id}/score", timeout=10)
+                if score_r.ok:
+                    sc = score_r.json()
+                    c1s, c2s = st.columns(2)
+                    with c1s:
+                        st.markdown("### 🎯 Lead Score Card")
+                        st.metric("Lead Score", f"{sc['lead_score']}/100")
+                        st.metric("Conversion Probability", f"{sc.get('conversion_probability',0)}%")
+                        if sc.get('qualification_tier'):
+                            st.info(f"Qualification: {sc['qualification_tier']}")
+                # Outreach Strategy Card
+                try:
+                    nba_r = requests.get(f"{API_BASE}/leads/{lead_id}/next-best-action", timeout=10)
+                    if nba_r.ok:
+                        nba = nba_r.json()
+                        with st.expander("Outreach Strategy", expanded=True):
+                            st.write(f"**Follow-up Timing:** {nba['timing']}")
+                            st.write(f"**Priority:** {nba['priority_level']}")
+                            st.write(f"**Recommended Action:** {nba['recommended_action']}")
+                            st.markdown("**Channel Mix:** " + ", ".join(nba['channel_mix']))
+                            st.markdown("**Content Strategy:** " + ", ".join(nba['content_strategy']))
+                except Exception:
+                    pass
+                st.markdown("---")
+            except Exception:
+                pass
             
             c1, c2, c3, c4 = st.columns(4)
             generate_btn = c1.button("Generate Email", type="primary", use_container_width=True)
@@ -200,11 +231,84 @@ elif page == "Lead Scoring":
             if st.button("Calculate lead score", type="primary"):
                 r = requests.get(f"{API_BASE}/leads/{lead_id}/score", timeout=10); r.raise_for_status(); result = r.json()
                 st.metric("Lead qualification score", f"{result['lead_score']}/100")
+                col_p1, col_p2 = st.columns(2)
+                col_p1.metric("Conversion Probability", f"{result.get('conversion_probability', 0)}%")
+                if result.get('probability_components'):
+                    pc = result['probability_components']
+                    with col_p2.expander("Probability Components"):
+                        st.write(f"Engagement: {pc.get('engagement',0)}")
+                        st.write(f"Fit: {pc.get('fit',0)}")
+                        st.write(f"Intent: {pc.get('intent',0)}")
+                        st.write(f"Decision Readiness: {pc.get('decision_readiness',0)}")
                 st.progress(result["lead_score"] / 100)
                 st.markdown("**Scoring factors**")
                 if result["factors"]: st.dataframe(result["factors"], width='stretch', hide_index=True)
                 else: st.info("No positive scoring factors were identified yet.")
                 st.markdown("**Recommended next action**")
                 st.write(result["recommendation"])
-                st.warning(result["scoring_method"] + " " + result["probability_note"])
+                
+                st.markdown("---")
+                st.subheader("🎯 Next-Best-Action Recommendation Engine")
+                try:
+                    nba = requests.get(f"{API_BASE}/leads/{lead_id}/next-best-action", timeout=10); nba.raise_for_status(); nba_res = nba.json()
+                    col_n1, col_n2 = st.columns(2)
+                    col_n1.info(f"**Follow-up Timing:** {nba_res['timing']}\n\n**Priority:** {nba_res['priority_level']}")
+                    col_n2.success(f"**Recommended Action:** {nba_res['recommended_action']}")
+                    st.markdown("**Channel Mix:**")
+                    for ch in nba_res['channel_mix']:
+                        st.write(f"• {ch}")
+                    st.markdown("**Content Strategy:**")
+                    for ct in nba_res['content_strategy']:
+                        st.write(f"• {ct}")
+                except Exception as exc:
+                    st.error(f"Could not load next-best-action: {exc}")
+                
+                st.warning(result.get("probability_note", "") + " " + result["scoring_method"])
+    except Exception as exc: api_error(exc)
+
+elif page == "Conversation Intelligence":
+    st.header("5. Conversation Intelligence")
+    st.write("Summarize sales calls and automatically extract action items from transcripts.")
+    try:
+        leads = get_leads()
+        with st.form("summarize_form"):
+            lead_id = st.selectbox("Link to lead (optional)", [None] + [x["id"] for x in leads], format_func=lambda i: "None" if i is None else next(x['company_name'] for x in leads if x['id']==i), key="conv_lead")
+            meeting_type = st.selectbox("Meeting type", ["Discovery Call", "Demo", "Negotiation", "Follow-up", "Other"], key="conv_type")
+            transcript = st.text_area("Paste sales call transcript", height=300, placeholder="Speaker 1: ...\nSpeaker 2: ...", key="conv_transcript")
+            submit_conv = st.form_submit_button("Summarize Call & Extract Action Items", type="primary", use_container_width=True)
+        if submit_conv:
+            if not transcript.strip():
+                st.error("Please paste a transcript first.")
+            else:
+                try:
+                    r = requests.post(f"{API_BASE}/conversations/summarize", json={"lead_id": lead_id, "meeting_type": meeting_type, "transcript": transcript.strip()}, timeout=30)
+                    r.raise_for_status()
+                    data = r.json()
+                    st.subheader("Call Summary")
+                    st.write(data.get("summary", ""))
+                    col_k, col_c = st.columns(2)
+                    with col_k:
+                        st.markdown("**Key Discussion Points**")
+                        for kp in data.get("key_points", []) or []:
+                            st.write("• " + str(kp))
+                        if not data.get("key_points"): st.info("No key points extracted.")
+                    with col_c:
+                        st.markdown("**Customer Concerns**")
+                        for cc in data.get("customer_concerns", []) or []:
+                            st.write("• " + str(cc))
+                        if not data.get("customer_concerns"): st.info("No concerns identified.")
+                    st.markdown("**Action Items**")
+                    for ai in data.get("action_items", []) or []:
+                        if isinstance(ai, dict):
+                            st.write(f"• {ai.get('task','')} — Assignee: {ai.get('assignee','')} — Due: {ai.get('due_date','')}")
+                        else:
+                            st.write(f"• {ai}")
+                    if not data.get("action_items"): st.info("No action items extracted.")
+                    st.markdown("**Next Steps**")
+                    for ns in data.get("next_steps", []) or []:
+                        st.write("• " + str(ns))
+                    if not data.get("next_steps"): st.info("No next steps identified.")
+                    st.caption(data.get("note", ""))
+                except Exception as exc:
+                    api_error(exc)
     except Exception as exc: api_error(exc)

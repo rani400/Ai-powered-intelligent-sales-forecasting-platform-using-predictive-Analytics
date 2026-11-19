@@ -43,4 +43,29 @@ class OutreachRequest(BaseModel):
     tone: str = Field(default="professional", pattern="^(professional|friendly|concise)$")
     goal: str = Field(default="schedule a short discovery call", max_length=200)
 
-    
+class ConversationSummarizeRequest(BaseModel):
+    lead_id: Optional[int] = None
+    meeting_type: str = Field(default="Discovery Call", max_length=100)
+    transcript: str = Field(min_length=10, max_length=50000)
+
+
+class CrmImportRequest(BaseModel):
+    crm: str = Field(pattern="^(salesforce|hubspot)$")
+    data: dict
+    create_lead: bool = False
+
+
+class CrmExportRequest(BaseModel):
+    crm: str = Field(pattern="^(salesforce|hubspot)$")
+    include_empty: bool = False
+
+
+class CrmSyncRequest(BaseModel):
+    crm: str = Field(pattern="^(salesforce|hubspot)$")
+    entities: Optional[list[str]] = None
+
+
+class ActivityCreate(BaseModel):
+    activity_type: str = Field(default="note", max_length=50)
+    subject: str = Field(default="", max_length=300)
+    body: str = ""

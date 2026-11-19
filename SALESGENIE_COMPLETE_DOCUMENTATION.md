@@ -1,4 +1,44 @@
+# SalesGenie AI — Complete Project Documentation
 
+**Project Name:** SalesGenie AI  
+**Version:** 1.0.0  
+**Date:** October 2026  
+**Technology Stack:** FastAPI, Streamlit, SQLite, Pydantic  
+**Modules Implemented:** Lead Management, Lead Intelligence, AI Outreach, Lead Scoring, Conversation Intelligence
+
+---
+
+## Table of Contents
+
+1. [Project Overview](#project-overview)
+2. [Objectives](#objectives)
+3. [System Architecture](#system-architecture)
+4. [Module Details](#module-details)
+5. [Database Schema](#database-schema)
+6. [API Endpoints](#api-endpoints)
+7. [Request/Response Examples](#requestresponse-examples)
+8. [Scoring Algorithm Details](#scoring-algorithm-details)
+9. [Project Structure](#project-structure)
+10. [Installation & Setup](#installation--setup)
+11. [Configuration](#configuration)
+12. [Role & Responsibility Matrix](#role--responsibility-matrix)
+13. [Testing Guidelines](#testing-guidelines)
+14. [Future Enhancements](#future-enhancements)
+15. [Notes & Constraints](#notes--constraints)
+16. [Appendix](#appendix)
+
+---
+
+## Project Overview
+
+SalesGenie AI is a lightweight CRM assistant implementing five modules:
+1. **Lead Management** — CRUD operations for prospect records
+2. **Lead Intelligence** — Company analysis and insights
+3. **AI Outreach** — Personalized email draft generation
+4. **Lead Scoring** — Rule-based qualification scoring
+5. **Conversation Intelligence** — Summarize sales calls and extract action items automatically
+
+This is a standalone reference implementation designed for learning and demonstration purposes.
 
 ---
 
@@ -26,11 +66,22 @@
 5. If API fails or no key: Uses template based on tone (professional/friendly/concise) â†’ Returns with note about draft only, no sending
 6. UI displays subject and body
 
-### Module 4: Lead Scoring Workflow
-1. User selects lead, clicks "Calculate score" â†’ GET `/leads/{id}/score`
-2. Backend fetches lead â†’ `score_lead()` evaluates all rules
-3. Returns score, tier, factors list with points, recommendation, method notes
-4. UI displays metrics, factor breakdown table, explanatory notes
+### Module 5: Conversation Intelligence Workflow
+1. User selects a lead (optional), chooses meeting type, and pastes a sales call transcript
+2. Clicks "Summarize Call & Extract Action Items" â†’ POST `/conversations/summarize` with `{"lead_id": ..., "meeting_type": ..., "transcript": "..."}`
+3. Backend calls `summarize_conversation(transcript, meeting_type)`
+4. If `GROQ_API_KEY` exists: Sends prompt to Groq API with model `openai/gpt-oss-20b` â†’ Parses JSON response with summary, key_points, customer_concerns, action_items, next_steps
+5. If API fails or no key: Uses rule-based keyword extraction (detects action keywords like "follow up", "schedule", "send", "demo", "proposal", etc.) â†’ Returns with note about rule-based extraction
+6. Optionally saves the conversation record to the `conversations` table in SQLite
+7. UI displays summary, key discussion points, customer concerns, action items (with assignee/due date), and next steps
+
+### Module 5: Conversation Intelligence Workflow
+1. User uploads/pastes sales call transcript or conversation notes in the Conversation Intelligence tab
+2. Clicks "Summarize Call & Extract Action Items" ? POST `/conversations/summarize` with `{"transcript": "...", "meeting_type": "..."}`
+3. Backend processes transcript using NLP/LLM logic ? Generates call summary, key discussion points, customer concerns, action items with assignees/due dates, next steps
+4. If `GROQ_API_KEY` exists: Uses LLM for intelligent summarization and action item extraction ? Returns structured results
+5. If API fails or no key: Uses rule-based extraction (keywords: action, follow up, schedule, send, review, call back) ? Returns with note about extraction method
+6. UI displays summary, key points, action items table, and next steps
 
 ---
 
@@ -106,19 +157,20 @@ POST /leads
   "lead_scoring": {
     "lead_score": 95,
     "qualification_tier": "High",
-    "conversion_probability": null,
-    "probability_note": "A real conversion probability requires historical leads with known outcomes and a validated predictive model.",
+    "conversion_probability": 78,
+    "probability_components": {
+      "engagement": 25,
+      "fit": 20,
+      "intent": 18,
+      "decision_readiness": 15
+    },
+    "probability_note": "Conversion probability calculated using engagement, fit, intent, and decision readiness factors; stored in lead_scores table.",
     "scoring_method": "Explainable rule-based baseline; not a trained machine-learning model.",
     "factors": [
       {"factor": "High engagement", "points": 25},
-      {"factor": "Clicked an outreach email", "points": 10},
-      {"factor": "Opened emails more than once", "points": 5},
-      {"factor": "Repeated website visits", "points": 10},
-      {"factor": "Budget confirmed", "points": 15},
-      {"factor": "Business need identified", "points": 15},
-      {"factor": "Decision-maker identified", "points": 10},
-      {"factor": "Company size may support a larger engagement", "points": 5},
-      {"factor": "Industry information available", "points": 5}
+      {"factor": "Industry fit", "points": 20},
+      {"factor": "Strong intent signals", "points": 18},
+      {"factor": "Decision readiness", "points": 15}
     ],
     "recommendation": "Prioritise a personalised follow-up and propose a discovery call."
   }
@@ -230,3 +282,45 @@ Start-Process "http://127.0.0.1:8000/docs"
 ```
 
 **Document Version:** 1.1 | **Last Updated:** 2026-10-27
+
+---
+
+## CRM Integration & Sync (Salesforce / HubSpot)
+
+### Field Mapping Endpoints
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| GET | `/crm/field-mappings` | Show mapping for both CRMs (or `?crm=salesforce\|hubspot`) |
+| GET | `/crm/field-mappings/validate?crm=...` | Validate completeness and duplicates |
+| POST | `/crm/leads/{id}/export` | Convert lead to CRM-ready payload |
+| POST | `/crm/leads/import` | Map a CRM record back to lead fields |
+
+### Sync Endpoints
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| GET | `/crm/deal-stages` | Deal-stage mapping per CRM |
+| POST | `/crm/activities/{lead_id}` | Record a local activity (call/email/meeting/note) |
+| GET | `/crm/activities/{lead_id}` | List activities for a lead |
+| POST | `/crm/sync/leads/{lead_id}` | Sync contact, deal, and activities (`{crm, entities}`) |
+| GET | `/crm/sync/logs` | Query CRM_Sync_Logs (filters: crm, entity_type, status) |
+
+### Deal Stage Mapping
+| Lead Status | Salesforce Stage | HubSpot Stage |
+|-------------|------------------|---------------|
+| New | Prospecting | appointmentscheduled |
+| Contacted | Prospecting | qualifiedtobuy |
+| Qualified | Qualification | presentationscheduled |
+| Proposal | Proposal/Price Quote | decisionmakerboughtin |
+| Negotiation | Negotiation/Review | contractsent |
+| Won | Closed Won | closedwon |
+| Lost | Closed Lost | closedlost |
+
+### CRM_Sync_Logs Table
+Columns: `id, crm, entity_type (contact/activity/deal), entity_id, direction, status (success/mapped/failed), message, payload, remote_id, created_at`.
+
+### Live Push Configuration (optional)
+Set these env vars to enable real API pushes; otherwise sync prepares and logs payloads as `mapped` (dry run):
+- `SALESFORCE_INSTANCE_URL`, `SALESFORCE_ACCESS_TOKEN`
+- `HUBSPOT_ACCESS_TOKEN`
+
+**Document Version:** 1.2 | **Last Updated:** 2026-11-19
