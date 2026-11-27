@@ -1,32 +1,29 @@
-# Environment / secrets
+# Environment variables and secrets
 .env
+.env.*
+!.env.example
+!.env.hubspot.example
+.streamlit/secrets.toml
 
-# Virtual environments
+# Virtual environment
 .venv/
 venv/
-env/
 
-# Python cache / test cache
-__pycache__/
-*.py[cod]
-.pytest_cache/
-.mypy_cache/
-
-# Local databases / generated artifacts
+# Local databases
 *.db
+*.db-wal
+*.db-shm
 *.sqlite
 *.sqlite3
-*.pkl
-*.joblib
 
-# IDE / OS files
-.vscode/
-.idea/
-.DS_Store
-Thumbs.db
+# Python cache
+__pycache__/
+.pytest_cache/
+*.pyc
 
-# Logs / temporary files
-*.log
-tmp/
-temp/
-/artifacts/
+# Backups
+*.bak
+milestone3_backup/
+
+# Deployment configuration
+.vercel/

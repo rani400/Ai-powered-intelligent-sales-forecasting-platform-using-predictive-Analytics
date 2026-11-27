@@ -1,0 +1,31 @@
+{
+  "uid": "salesgenie_hubspot_oauth",
+  "type": "app",
+  "config": {
+    "name": "SalesGenie AI CRM Sync",
+    "description": "Connects SalesGenie AI to an authorized HubSpot CRM account for contact, company and deal synchronization.",
+    "distribution": "private",
+    "auth": {
+      "type": "oauth",
+      "redirectUrls": [
+        "http://localhost:8000/api/hubspot/oauth/callback"
+      ],
+      "requiredScopes": [
+        "oauth",
+        "crm.objects.contacts.read",
+        "crm.objects.contacts.write",
+        "crm.objects.companies.read",
+        "crm.objects.companies.write",
+        "crm.objects.deals.read",
+        "crm.objects.deals.write"
+      ],
+      "optionalScopes": [],
+      "conditionallyRequiredScopes": []
+    },
+    "permittedUrls": {
+      "fetch": [],
+      "iframe": [],
+      "img": []
+    }
+  }
+}

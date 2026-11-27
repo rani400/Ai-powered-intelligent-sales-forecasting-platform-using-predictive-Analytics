@@ -80,22 +80,87 @@ def _post_json(url: str, token: str, body: dict):
 def live_sync(preview: CRMPreview, settings) -> str:
     if preview.provider == CRMProvider.salesforce:
         base = _salesforce_base_url(settings.salesforce_instance_url)
+
         if not settings.salesforce_access_token:
-            raise HTTPException(503, 'Salesforce access token is not configured')
+            raise HTTPException(
+                503, 'Salesforce access token is not configured'
+            )
+
         url = base + '/services/data/v60.0/sobjects/Lead/'
-        status, data = _post_json(url, settings.salesforce_access_token, preview.payload)
-        if status != 201 or not isinstance(data, dict) or not data.get('success') or not data.get('id'):
-            raise HTTPException(502, 'Salesforce did not confirm the record write')
+
+        status, data = _post_json(
+            url,
+            settings.salesforce_access_token,
+            preview.payload
+        )
+
+        if (
+            status != 201
+            or not isinstance(data, dict)
+            or not data.get('success')
+            or not data.get('id')
+        ):
+            raise HTTPException(
+                502, 'Salesforce did not confirm the record write'
+            )
+
         return str(data['id'])
+
+    # HubSpot synchronization
     if not settings.hubspot_access_token:
-        raise HTTPException(503, 'HubSpot access token is not configured')
+        raise HTTPException(
+            503, 'HubSpot access token is not configured'
+        )
+
     url = 'https://api.hubapi.com/crm/v3/objects/contacts/batch/upsert'
-    data_in = {'inputs': [{'idProperty': 'email', 'id': preview.payload['email'],
-                           'properties': preview.payload}]}
-    status, data = _post_json(url, settings.hubspot_access_token, data_in)
-    if status not in (200, 201) or not isinstance(data, dict) or not data.get('results'):
-        raise HTTPException(502, 'HubSpot did not confirm the record write')
+
+    data_in = {
+        'inputs': [
+            {
+                'idProperty': 'email',
+                'id': preview.payload['email'],
+                'properties': preview.payload
+            }
+        ]
+    }
+
+    status, data = _post_json(
+        url,
+        settings.hubspot_access_token,
+        data_in
+    )
+
+    if (
+        status not in (200, 201)
+        or not isinstance(data, dict)
+        or not data.get('results')
+    ):
+        category = (
+            data.get('category', 'UNKNOWN')
+            if isinstance(data, dict)
+            else 'UNKNOWN'
+        )
+
+        if category not in (
+            'VALIDATION_ERROR',
+            'MISSING_SCOPES',
+            'INVALID_AUTHENTICATION',
+            'RATE_LIMITS',
+            'CONFLICT',
+            'UNKNOWN'
+        ):
+            category = 'UNKNOWN'
+
+        raise HTTPException(
+            502,
+            f'HubSpot rejected the request: provider HTTP {status}, category {category}'
+        )
+
     remote_id = data['results'][0].get('id')
+
     if not remote_id:
-        raise HTTPException(502, 'HubSpot did not return a contact identifier')
+        raise HTTPException(
+            502, 'HubSpot did not return a contact identifier'
+        )
+
     return str(remote_id)
